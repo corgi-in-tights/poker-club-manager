@@ -4,9 +4,9 @@ from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
-class UsersConfig(AppConfig):
-    name = "poker_club_manager.users"
-    verbose_name = _("Users")
+class EventsConfig(AppConfig):
+    name = "poker_club_manager.events"
+    verbose_name = _("Events")
 
     def ready(self):
         with contextlib.suppress(ImportError):

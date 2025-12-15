@@ -67,7 +67,7 @@ DJANGO_APPS = [
     "django.contrib.sites",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # "django.contrib.humanize", # Handy template tags
+    "django.contrib.humanize",
     "django.contrib.admin",
     "django.forms",
 ]
@@ -85,8 +85,11 @@ THIRD_PARTY_APPS = [
 ]
 
 LOCAL_APPS = [
+    "poker_club_manager.common",
     "poker_club_manager.users",
-    # Your stuff: custom apps go here
+    "poker_club_manager.events",
+    "poker_club_manager.points",
+    "poker_club_manager.blinds",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
