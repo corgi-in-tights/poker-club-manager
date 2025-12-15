@@ -1,0 +1,7 @@
+# PostgreSQL
+# ------------------------------------------------------------------------------
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=poker_club_manager
+POSTGRES_USER=yWkaraSlXDLjVxKRfBpoLZfFbdOxtgpF
+POSTGRES_PASSWORD=At2TinFNXIuQWFD3o1DKV2MeVkKH5yTZiuXIHexQpeeybLXDGEEUk5OaLQPtB3Z8
