@@ -1,6 +1,7 @@
 from django.core.paginator import Paginator
-from django.http import HttpRequest
+from django.http import Http404, HttpRequest
 from django.shortcuts import render
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView
 
 from .models import PokerEvent
@@ -33,7 +34,7 @@ def browse_events(request: HttpRequest):
     p = Paginator(events, events_per_page)
     page_events = p.get_page(page)
 
-    return render(request, "events/home.html", {"events": page_events})
+    return render(request, "events/browse_events.html", {"events": page_events})
 
 
 class EventDetailView(DetailView):
@@ -41,3 +42,13 @@ class EventDetailView(DetailView):
     template_name = "events/event_detail.html"
     context_object_name = "event"
     pk_url_kwarg = "event_id"
+
+
+def check_in_default(request: HttpRequest):
+    active_events = PokerEvent.objects.active()
+    if active_events.exists():
+        event = active_events.first()
+        return render(request, "events/check_in.html", {"event": event})
+
+    msg = _("There is no active event")
+    raise Http404(msg)

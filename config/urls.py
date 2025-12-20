@@ -15,11 +15,11 @@ urlpatterns = [
         name="about",
     ),
     path(settings.ADMIN_URL, admin.site.urls),
+    path("", include("gsheets.urls")),
     path("users/", include("poker_club_manager.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
-
     path("events/", include("poker_club_manager.events.urls", namespace="events")),
-
+    path("leaderboard/", include("poker_club_manager.points.urls", namespace="points")),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
 

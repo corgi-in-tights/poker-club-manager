@@ -1,12 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+
 Events Home Page
 
 {% for event in events %}
     <div class="event">
-        <h2>{{ event.name }}</h2>
-        <p>{{ event.start_date|start_date:"F j, Y, g:i a" }}</p>
+        <h2>{{ event.title }}</h2>
+        <p>{{ event.start_date|date:"F j, Y" }}</p>
         <p>Created at: {{ event.created_at|date:"F j, Y, g:i a" }}</p>
         <p>Last updated: {{ event.updated_at|date:"F j, Y, g:i a" }}</p>
     </div>
 {% empty %}
     <p>No events available.</p>
 {% endfor %}
+
+{% endblock content %}

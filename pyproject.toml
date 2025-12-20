@@ -183,4 +183,5 @@ dependencies = [
     "python-slugify==8.0.4",
     "rcssmin==1.2.2",
     "psycopg2-binary (>=2.9.11,<3.0.0)",
+    "django-gsheets>=0.0.10",
 ]
