@@ -1,30 +1,28 @@
 {% extends "base.html" %}
 
 {% block content %}
+    {% if request.user.is_authenticated %}
+        <form method="post">
+            {% csrf_token %}
+            <button type="submit">Check in as {{ request.user.username }}</button>
+        </form>
+        <form method="post"
+              action="{% url 'account_logout' %}?next={{ request.path }}">
+            {% csrf_token %}
+            <button type="submit">Not you? Log out</button>
+        </form>
+    {% else %}
+        <p>Please log in to check in as a member.</p>
+        <a href="{% url 'account_login' %}">Log In</a>
+        <a href="{% url 'account_signup' %}">Sign Up</a>
 
-{% if request.user.is_authenticated %}
+        <p>Or check in as a guest</p>
 
-    <form method="post">
-    {% csrf_token %}
-    <button type="submit">Check in as {{ request.user.username }}</button>
-    </form>
-
-    <form method="post" action="{% url 'account_logout' %}?next={{ request.path }}">
-    {% csrf_token %}
-    <button type="submit">Not you? Log out</button>
-    </form>
-
-{% else %}
-
-    <p>Please log in to check in as a member.</p>
-    <a href="{% url 'account_login' %}">Log In</a>
-    <button>Sign Up</button>
-
-    <p>Or check in as a guest:</p>
-    <input>Name</input>
-    <input>Email</input>
-    <button>Check in as Guest</button>
-
-{% endif %}
-
+        <form method="post">
+            {% csrf_token %}
+            <input type="username" name="name" placeholder="My Name" />
+            <input type="email" name="email" placeholder="myemail@example.com" />
+            <button type="submit">Check in as guest</button>
+        </form>
+    {% endif %}
 {% endblock content %}

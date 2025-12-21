@@ -1,0 +1,87 @@
+<nav class="page-nav">
+    {% with prev=page|add:"-1" next=page|add:"1" %}
+        <div class="page-nav__left">
+            {% if page > 1 %}
+                <a class="page-nav__btn"
+                   href="?page={{ prev }}"
+                   data-page="{{ prev }}"
+                   rel="prev">Previous</a>
+            {% else %}
+                <span class="page-nav__btn page-nav__btn--disabled">Previous</span>
+            {% endif %}
+        </div>
+        <div class="page-nav__center">
+            <span class="page-nav__pill">
+                Page&nbsp;{{ page }}/{{ max_page }}
+            </span>
+        </div>
+        <div class="page-nav__right">
+            {% if page < max_page %}
+                <a class="page-nav__btn"
+                   href="?page={{ next }}"
+                   data-page="{{ next }}"
+                   rel="next">Next</a>
+            {% else %}
+                <span class="page-nav__btn page-nav__btn--disabled" aria-disabled="true">Next</span>
+            {% endif %}
+        </div>
+    {% endwith %}
+</nav>
+
+<style>
+  .page-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .page-nav__left, .page-nav__center, .page-nav__right {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  .page-nav__center {
+    justify-content: center;
+    flex: 1;
+  }
+
+  .page-nav__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 10px;
+    background: #fff;
+    color: #111;
+    text-decoration: none;
+    font-size: 14px;
+    line-height: 1;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .page-nav__btn:hover {
+    background: #f6f8fa;
+  }
+
+  .page-nav__btn--disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
+  .page-nav__pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid #d0d7de;
+    border-radius: 999px;
+    background: #fff;
+    font-size: 14px;
+    white-space: nowrap;
+  }
+</style>

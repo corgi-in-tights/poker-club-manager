@@ -1,3 +1,5 @@
+import logging
+
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.db.models import Exists, OuterRef, Q
@@ -9,10 +11,20 @@ from poker_club_manager.common.models import AbstractTimestampedModel
 User = get_user_model()
 
 MINIMUM_EVENT_ATTENDEES_FOR_RANKING = 5
-MINIMUM_DAYS_FOR_EVENT_RSVP = 14
+MAXIMUM_DAYS_FOR_EVENT_RSVP = 14
 
+logger = logging.getLogger(__name__)
 
 class EventQuerySet(models.QuerySet):
+    def search(self, query: str):
+        logger.info("Searching events with query: %s", query)
+        if not query:
+            return self
+
+        return self.filter(
+            Q(title__icontains=query) | Q(description__icontains=query),
+        )
+
     def finished(self):
         today = timezone.now()
         return self.filter(
@@ -31,7 +43,7 @@ class EventQuerySet(models.QuerySet):
             Q(end_date__gte=today) | Q(end_date__isnull=True),
         )
 
-    def popularity(self):
+    def by_popularity(self):
         return self.annotate(
             rsvp_count=models.Count("rsvps"),
         ).order_by("-rsvp_count", "start_date")
@@ -65,6 +77,7 @@ class EventQuerySet(models.QuerySet):
             ),
         )
 
+
 class Event(AbstractTimestampedModel):
     objects = EventQuerySet.as_manager()
 
@@ -93,11 +106,18 @@ class Event(AbstractTimestampedModel):
         return timezone.now() > self.end_date
 
     @property
+    def rsvp_start_date(self) -> timezone.datetime:
+        return self.start_date - timezone.timedelta(
+            days=MAXIMUM_DAYS_FOR_EVENT_RSVP,
+        )
+
+    @property
     def is_rsvp_open(self) -> bool:
-        # Can only RSVP upto 2 weeks before of the event
-        today = timezone.now().date()
-        rsvp_open_date = today - timezone.timedelta(days=MINIMUM_DAYS_FOR_EVENT_RSVP)
-        return not self.is_active and not self.is_finished and rsvp_open_date <= today
+        # Can only RSVP upto N days before of the event
+        now = timezone.now()
+        return (
+            not self.is_active and not self.is_finished and now >= self.rsvp_start_date
+        )
 
     def rsvp_user(self, user: User, status: str) -> "EventRSVP":
         rsvp, created = EventRSVP.objects.get_or_create(
@@ -188,9 +208,7 @@ class GuestParticipant(AbstractTimestampedModel):
     )
 
     def __str__(self):
-        return (
-            f"Guest Participant {self.id} {self.name} for Event {self.event.id}"
-        )
+        return f"Guest Participant {self.id} {self.name} for Event {self.event.id}"
 
 
 class EventRSVP(AbstractTimestampedModel):

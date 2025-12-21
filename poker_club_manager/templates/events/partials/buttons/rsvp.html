@@ -1,34 +1,40 @@
-{% if event.is_rsvped %}
-    <p>Already RSVPed</p>
+{% if event.is_active %}
+    <span>Event is ongoing</span>
+{% elif not event.is_rsvp_open %}
+    <span>RSVP opens on {{ event.rsvp_start_date|date:"F j, Y" }}</span>
 {% else %}
-    <button onclick="send_rsvp()" data-api-url="{% url 'api:event-rsvp' event.id %}">RSVP</button>
-{% endif %}
-
-<script>
-    function send_rsvp() {
+    {% if event.is_rsvped %}
+        <p>Already RSVPed</p>
+    {% else %}
+        <button onclick="send_rsvp()"
+                data-api-url="{% url 'api:event-rsvp' event.id %}">RSVP</button>
+    {% endif %}
+    <script>
+      function send_rsvp() {
         const button = event.target;
         const apiUrl = button.getAttribute('data-api-url');
 
         fetch(apiUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token }}'
+              'Content-Type': 'application/json',
+              'X-CSRFToken': '{{ csrf_token }}'
             },
             body: JSON.stringify({
-                "status": "going"
+              "status": "going"
             })
-        })
-        .then(response => {
+          })
+          .then(response => {
             if (response.ok) {
-                button.replaceWith('RSVP successful!');
+              button.replaceWith('RSVP successful!');
             } else {
-                alert('Failed to RSVP. Please try again.');
+              alert('Failed to RSVP. Please try again.');
             }
-        })
-        .catch(error => {
+          })
+          .catch(error => {
             console.error('Error:', error);
             alert('An error occurred. Please try again.');
-        });
-    }
-</script>
+          });
+      }
+    </script>
+{% endif %}

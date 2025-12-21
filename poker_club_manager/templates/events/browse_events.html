@@ -1,9 +1,37 @@
 {% extends "base.html" %}
 
+{% load static %}
+
+{% block javascript %}
+    {{ block.super }}
+    <script src="{% static 'js/events/browse_events.js' %}"></script>
+{% endblock javascript %}
 {% block content %}
+    <h1>Browse Events</h1>
+    <!-- Filter Bar -->
+    <label for="events_per_page">Events per Page</label>
+    <select class="filter" id="filter-events_per_page" name="v" data-default="{{ default_filters.events_per_page }}">
+        <option value="10" {% if filters.events_per_page == 10 %}selected{% endif %}>10</option>
+        <option value="25" {% if filters.events_per_page == 25 %}selected{% endif %}>25</option>
+        <option value="50" {% if filters.events_per_page == 50 %}selected{% endif %}>50</option>
+    </select>
+    <label for="order">Order By:</label>
+    
+    <select class="filter" id="filter-order" name="s" data-default="{{ default_filters.order }}">
+        <option value="relevance" {% if filters.order == "relevance" %}selected{% endif %}>Relevance</option>
+        <option value="popular" {% if filters.order == "popular" %}selected{% endif %}>Popular</option>
+        <option value="date" {% if filters.order == "date" %}selected{% endif %}>Date</option>
+    </select>
 
-Events Home Page
+    <input type="text"
+           id="event-search"
+           name="q"
+           placeholder="Search events..." 
+           value="{{ search_query }}"/>
 
-{% include "events/partials/event_list.html" with events=events %}
-
+    
+    <!-- Event List -->
+    <div id="event-list">
+        {% include "events/partials/event_list.html" with events=events %}
+    </div>
 {% endblock content %}
