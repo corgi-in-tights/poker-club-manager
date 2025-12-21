@@ -1,15 +1,15 @@
 from rest_framework import serializers
 
 from poker_club_manager.events.models import (
-    PokerEvent,
-    PokerEventAttendee,
-    PokerEventRSVP,
+    Event,
+    EventRSVP,
+    Participant,
 )
 
 
-class PokerEventRSVPSerializer(serializers.ModelSerializer):
+class EventRSVPSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PokerEventRSVP
+        model = EventRSVP
         fields = [
             "id",
             "event",
@@ -22,26 +22,22 @@ class PokerEventRSVPSerializer(serializers.ModelSerializer):
         read_only_fields = ["event", "user"]
 
 
-class PokerEventAttendeeSerializer(serializers.ModelSerializer):
+class ParticipantSerializer(serializers.ModelSerializer):
     class Meta:
-        model = PokerEventAttendee
+        model = Participant
         fields = [
             "id",
             "event",
             "user",
-            "times_eliminated",
             "final_position",
-            "points_earned",
-            "created_at",
-            "updated_at",
         ]
-        read_only_fields = ["user"]
+        read_only_fields = ["event", "user"]
 
 
-class PokerEventSerializer(serializers.ModelSerializer):
+class EventSerializer(serializers.ModelSerializer):
     going_count = serializers.IntegerField(read_only=True)
     late_count = serializers.IntegerField(read_only=True)
 
     class Meta:
-        model = PokerEvent
+        model = Event
         fields = "__all__"

@@ -21,9 +21,19 @@ class Season(AbstractTimestampedModel):
     def __str__(self):
         return f"Season {self.id} | {self.name}"
 
+    def user_is_member(self, user: User) -> bool:
+        return SeasonMembership.objects.filter(user=user, season=self).exists()
+
     def get_membership_for_user(self, user: User):
         return SeasonMembership.objects.filter(user=user, season=self).first()
 
+    def create_user_membership(self, user: User) -> "SeasonMembership":
+        membership, _ = SeasonMembership.objects.get_or_create(
+            user=user,
+            season=self,
+        )
+        membership.save()
+        return membership
 
 class SeasonMembership(AbstractTimestampedModel):
     user = models.ForeignKey(

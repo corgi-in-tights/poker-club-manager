@@ -5,29 +5,29 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from poker_club_manager.common.api.permissions import CanHost
-from poker_club_manager.events.models import PokerEvent, PokerEventRSVP
+from poker_club_manager.events.models import Event, EventRSVP, Participant
 
 from .serializers import (
-    PokerEventAttendeeSerializer,
-    PokerEventRSVPSerializer,
-    PokerEventSerializer,
+    EventRSVPSerializer,
+    EventSerializer,
+    ParticipantSerializer,
 )
 
 User = get_user_model()
 
 
-class PokerEventViewSet(viewsets.ModelViewSet):
-    queryset = PokerEvent.objects.annotate(
+class EventViewSet(viewsets.ModelViewSet):
+    queryset = Event.objects.annotate(
         going_count=Count(
             "rsvps",
-            filter=Q(rsvps__status=PokerEventRSVP.GOING),
+            filter=Q(rsvps__status=EventRSVP.GOING),
         ),
         late_count=Count(
             "rsvps",
-            filter=Q(rsvps__status=PokerEventRSVP.LATE),
+            filter=Q(rsvps__status=EventRSVP.LATE),
         ),
     )
-    serializer_class = PokerEventSerializer
+    serializer_class = EventSerializer
 
     def get_permissions(self):
         if self.action in {"list", "retrieve"}:
@@ -160,13 +160,13 @@ class PokerEventViewSet(viewsets.ModelViewSet):
         )
 
 
-class PokerEventRSVPViewSet(viewsets.ModelViewSet):
-    queryset = PokerEventRSVP.objects.all()
-    serializer_class = PokerEventRSVPSerializer
+class EventRSVPViewSet(viewsets.ModelViewSet):
+    queryset = EventRSVP.objects.all()
+    serializer_class = EventRSVPSerializer
     permissions = [CanHost()]
 
 
-class PokerEventAttendeeViewSet(viewsets.ModelViewSet):
-    queryset = PokerEventRSVP.objects.all()
-    serializer_class = PokerEventAttendeeSerializer
+class ParticipantViewSet(viewsets.ModelViewSet):
+    queryset = Participant.objects.all()
+    serializer_class = ParticipantSerializer
     permissions = [CanHost()]

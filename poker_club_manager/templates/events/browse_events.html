@@ -11,8 +11,21 @@ Events Home Page
         <p>Created at: {{ event.created_at|date:"F j, Y, g:i a" }}</p>
         <p>Last updated: {{ event.updated_at|date:"F j, Y, g:i a" }}</p>
 
-        <button data-url="" disabled="{{ event.user_is_rsvped(user) }}">RSVP</button>
-        <a href="{% url 'events:check_in' event.id %}">Check In</a>
+
+
+        {% if event.is_rsvped %}
+            <p>Already RSVPed</p>
+        {% else %}
+            <a href="{% url 'events:check_in' event.id %}">RSVP</a>
+        {% endif %}
+
+
+        {% if event.is_checked_in %}
+            <p>Already checked in</p>
+        {% else %}
+            <a href="{% url 'events:check_in' event.id %}">Check In</a>
+        {% endif %}
+
         <a href="{% url 'events:detail' event.id %}">View Details</a>
     </div>
 {% empty %}

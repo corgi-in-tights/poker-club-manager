@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -14,30 +14,55 @@ MINIMUM_DAYS_FOR_EVENT_RSVP = 14
 
 class EventQuerySet(models.QuerySet):
     def finished(self):
-        today = timezone.now().date()
+        today = timezone.now()
         return self.filter(
             Q(end_date__lt=today) | Q(end_date__isnull=True, start_date__lt=today),
         )
 
     def unfinished(self):
-        today = timezone.now().date()
+        today = timezone.now()
         return self.filter(
             Q(end_date__gte=today) | Q(end_date__isnull=True, start_date__gte=today),
         )
 
     def active(self):
-        today = timezone.now().date()
+        today = timezone.now()
         return self.filter(start_date__lte=today).filter(
             Q(end_date__gte=today) | Q(end_date__isnull=True),
         )
 
     def popularity(self):
-        return (
-            self.unfinished()
-            .annotate(
-                rsvp_count=models.Count("rsvps"),
-            )
-            .order_by("-rsvp_count", "start_date")
+        return self.annotate(
+            rsvp_count=models.Count("rsvps"),
+        ).order_by("-rsvp_count", "start_date")
+
+    def by_start_date(self):
+        return self.order_by("start_date")
+
+    def annotate_rsvp(self, user):
+        if not user.is_authenticated:
+            return self
+
+        return self.annotate(
+            is_rsvped=Exists(
+                EventRSVP.objects.filter(
+                    event=OuterRef("pk"),
+                    user=user,
+                ),
+            ),
+        )
+
+    def annotate_check_in(self, user):
+        if not user.is_authenticated:
+            return self
+
+        return self.annotate(
+            is_checked_in=Exists(
+                Participant.objects.filter(
+                    event=OuterRef("pk"),
+                    user=user,
+                ),
+            ),
         )
 
 class Event(AbstractTimestampedModel):
@@ -88,18 +113,21 @@ class Event(AbstractTimestampedModel):
 
     def add_user_participant(self, user: User) -> "Participant":
         p, created = Participant.objects.get_or_create(
-            user=user,
             event=self,
+            user=user,
         )
-        if created:  # Already checked in
+        if not created:  # Already checked in
             return False
+
+        if not self.season.user_is_member(user):
+            self.season.create_user_membership(user)
+
         p.save()
         return p
 
     def add_guest_participant(self, guest_name: str, guest_email: str) -> "Participant":
-        p, created = Participant.objects.get_or_create(
+        p, created = GuestParticipant.objects.get_or_create(
             event=self,
-            user=None,
             guest_name=guest_name,
             guest_email=guest_email,
         )
@@ -128,10 +156,41 @@ class Participant(AbstractTimestampedModel):
         related_name="participations",
         verbose_name=_("User"),
     )
-    final_position = models.PositiveIntegerField(_("Rank"), null=True, blank=True)
+    final_position = models.PositiveIntegerField(
+        _("Final Position"),
+        null=True,
+        blank=True,
+    )
 
     def __str__(self):
         return f"Participant {self.id} {self.user.username} for Event {self.event.id}"
+
+
+class GuestParticipant(AbstractTimestampedModel):
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="guests",
+        verbose_name=_("Event"),
+    )
+    name = models.CharField(
+        _("Guest Name"),
+        max_length=100,
+    )
+    email = models.EmailField(
+        _("Guest Email"),
+        blank=True,
+    )
+    final_position = models.PositiveIntegerField(
+        _("Final Position"),
+        null=True,
+        blank=True,
+    )
+
+    def __str__(self):
+        return (
+            f"Guest Participant {self.id} {self.name} for Event {self.event.id}"
+        )
 
 
 class EventRSVP(AbstractTimestampedModel):

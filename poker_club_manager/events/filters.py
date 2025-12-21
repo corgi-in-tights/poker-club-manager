@@ -37,5 +37,4 @@ class EventBrowseFilter:
                 return qs.by_start_date()
 
             case _:
-                # defensive default
                 return qs.by_start_date()
