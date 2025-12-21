@@ -10,6 +10,10 @@ Events Home Page
         <p>{{ event.start_date|date:"F j, Y" }}</p>
         <p>Created at: {{ event.created_at|date:"F j, Y, g:i a" }}</p>
         <p>Last updated: {{ event.updated_at|date:"F j, Y, g:i a" }}</p>
+
+        <button data-url="" disabled="{{ event.user_is_rsvped(user) }}">RSVP</button>
+        <a href="{% url 'events:check_in' event.id %}">Check In</a>
+        <a href="{% url 'events:detail' event.id %}">View Details</a>
     </div>
 {% empty %}
     <p>No events available.</p>

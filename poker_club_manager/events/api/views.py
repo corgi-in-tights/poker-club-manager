@@ -1,6 +1,10 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
-from rest_framework import permissions, viewsets
+from rest_framework import permissions, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
+from poker_club_manager.common.api.permissions import CanHost
 from poker_club_manager.events.models import PokerEvent, PokerEventRSVP
 
 from .serializers import (
@@ -9,44 +13,160 @@ from .serializers import (
     PokerEventSerializer,
 )
 
+User = get_user_model()
+
 
 class PokerEventViewSet(viewsets.ModelViewSet):
-    queryset = (
-        PokerEvent.objects
-        .annotate(
-            going_count=Count(
-                "rsvps",
-                filter=Q(rsvps__status=PokerEventRSVP.GOING),
-            ),
-            late_count=Count(
-                "rsvps",
-                filter=Q(rsvps__status=PokerEventRSVP.LATE),
-            ),
-        )
+    queryset = PokerEvent.objects.annotate(
+        going_count=Count(
+            "rsvps",
+            filter=Q(rsvps__status=PokerEventRSVP.GOING),
+        ),
+        late_count=Count(
+            "rsvps",
+            filter=Q(rsvps__status=PokerEventRSVP.LATE),
+        ),
     )
     serializer_class = PokerEventSerializer
 
     def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
+        if self.action in {"list", "retrieve"}:
             return [permissions.AllowAny()]
+
+        if self.action in {"rsvp", "check_in"}:
+            return [permissions.IsAuthenticated()]
+
+        if self.action in {
+            "add_user_attendee",
+            "remove_user_attendee",
+            "rank_user_attendee",
+        }:
+            return [CanHost()]
+
         return [permissions.IsAdminUser()]
+
+    @action(detail=True, methods=["post"])
+    def rsvp(self, request, pk=None):
+        event = self.get_object()
+        result = event.rsvp_user(request.user, request.data.get("status"))
+        if not result:
+            return Response(
+                {"status": "already rsvped"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {"status": "rsvp updated"},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="add-user-attendee",
+    )
+    def add_user_attendee(self, request, pk=None):
+        event = self.get_object()
+        if "user_id" not in request.data:
+            return Response(
+                {"error": "user_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_id = request.data["user_id"]
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response(
+                {"error": "user not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        result = event.check_in_user(user)
+        if not result:
+            return Response(
+                {"status": "already checked in"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {"status": "check-in updated"},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="remove-user-attendee",
+    )
+    def remove_user_attendee(self, request, pk=None):
+        event = self.get_object()
+        if "user_id" not in request.data:
+            return Response(
+                {"error": "user_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_id = request.data["user_id"]
+        user = User.objects.filter(id=user_id).first()
+        if not user:
+            return Response(
+                {"error": "user not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        result = event.check_in_user(user)
+        if not result:
+            return Response(
+                {"status": "already checked in"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return Response(
+            {"status": "check-in updated"},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="check-in",
+    )
+    def check_in_user(self, request, pk=None):
+        event = self.get_object()
+        event.add_user_participant(request.user)
+        return Response(
+            {"status": "check-in updated"},
+            status=status.HTTP_200_OK,
+        )
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="check-in-guest",
+    )
+    def check_in_guest(self, request, pk=None):
+        event = self.get_object()
+        if "guest_name" not in request.data or "guest_email" not in request.data:
+            return Response(
+                {"error": "guest_name and guest_email are required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        event.add_guest_participant(
+            request.user,
+            guest_name=request.data["guest_name"],
+            guest_email=request.data["guest_email"],
+        )
+        return Response(
+            {"status": "check-in updated"},
+            status=status.HTTP_200_OK,
+        )
 
 
 class PokerEventRSVPViewSet(viewsets.ModelViewSet):
     queryset = PokerEventRSVP.objects.all()
     serializer_class = PokerEventRSVPSerializer
-
-    def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
-            return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
+    permissions = [CanHost()]
 
 
 class PokerEventAttendeeViewSet(viewsets.ModelViewSet):
     queryset = PokerEventRSVP.objects.all()
     serializer_class = PokerEventAttendeeSerializer
-
-    def get_permissions(self):
-        if self.action in ["list", "retrieve"]:
-            return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
+    permissions = [CanHost()]

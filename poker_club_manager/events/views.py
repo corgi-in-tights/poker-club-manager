@@ -4,33 +4,21 @@ from django.shortcuts import render
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DetailView
 
-from .models import PokerEvent
+from poker_club_manager.common.utils.params import parse_int
+
+from .filters import EventBrowseFilter
+from .models import Event
 
 
 def browse_events(request: HttpRequest):
-    try:
-        page = int(request.GET.get("page", 1))
-    except ValueError:
-        page = 1
+    sort_order = request.GET.get("order", "relevance")
+    events = EventBrowseFilter(order=sort_order).apply()
 
-    try:
-        events_per_page = max(5, min(50, int(request.GET.get("events_per_page", 20))))
-    except ValueError:
-        events_per_page = 20
-
-    sort_order = request.GET.get("order", "asc")
-    if sort_order not in {"asc", "desc"}:
-        sort_order = "asc"
-
-    event_types = request.GET.getlist("event_types", [])
-    for i, event_type in enumerate(event_types):
-        if event_type not in {"tournament", "special", "other"}:
-            del event_types[i]
-            break
-
-    events = PokerEvent.objects.unfinished().order_by(
-        "start_date" if sort_order == "asc" else "-start_date",
+    page = parse_int(request.GET.get("page"), default=1, min_value=1)
+    events_per_page = parse_int(
+        request.GET.get("events_per_page"), default=20, min_value=5, max_value=50,
     )
+
     p = Paginator(events, events_per_page)
     page_events = p.get_page(page)
 
@@ -38,17 +26,27 @@ def browse_events(request: HttpRequest):
 
 
 class EventDetailView(DetailView):
-    model = PokerEvent
+    model = Event
     template_name = "events/event_detail.html"
     context_object_name = "event"
     pk_url_kwarg = "event_id"
 
 
-def check_in_default(request: HttpRequest):
-    active_events = PokerEvent.objects.active()
-    if active_events.exists():
-        event = active_events.first()
-        return render(request, "events/check_in.html", {"event": event})
+def check_into_first_active(request: HttpRequest):
+    active_events = Event.objects.active()
+    if not active_events.exists():
+        msg = _("There is no active event")
+        raise Http404(msg)
+    return check_in(request, active_events.first().id)
 
-    msg = _("There is no active event")
-    raise Http404(msg)
+
+def check_in(request: HttpRequest, event: int | Event):
+    if not isinstance(event, Event):
+        try:
+            event = Event.objects.get(id=event)
+        except Event.DoesNotExist:
+            msg = _("The requested event does not exist.")
+            raise Http404(msg) from None
+
+    return render(request, "events/check_in.html", {"event": event})
+

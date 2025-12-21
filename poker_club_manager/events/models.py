@@ -8,7 +8,11 @@ from poker_club_manager.common.models import AbstractTimestampedModel
 
 User = get_user_model()
 
-class PokerEventQuerySet(models.QuerySet):
+MINIMUM_EVENT_ATTENDEES_FOR_RANKING = 5
+MINIMUM_DAYS_FOR_EVENT_RSVP = 14
+
+
+class EventQuerySet(models.QuerySet):
     def finished(self):
         today = timezone.now().date()
         return self.filter(
@@ -27,59 +31,73 @@ class PokerEventQuerySet(models.QuerySet):
             Q(end_date__gte=today) | Q(end_date__isnull=True),
         )
 
+    def popularity(self):
+        return (
+            self.unfinished()
+            .annotate(
+                rsvp_count=models.Count("rsvps"),
+            )
+            .order_by("-rsvp_count", "start_date")
+        )
 
-class PokerEvent(AbstractTimestampedModel):
-    objects = PokerEventQuerySet.as_manager()
+class Event(AbstractTimestampedModel):
+    objects = EventQuerySet.as_manager()
 
+    season = models.ForeignKey(
+        "common.Season",
+        on_delete=models.CASCADE,
+        related_name="events",
+        verbose_name=_("Season"),
+    )
     title = models.CharField(_("Title"), max_length=255)
     description = models.CharField(_("Description"), blank=True, max_length=1024)
 
-    start_date = models.DateField(_("Start Date"))
-    end_date = models.DateField(_("End Date"), blank=True)
+    start_date = models.DateTimeField(_("Start Date"))
+    end_date = models.DateTimeField(_("End Date"), blank=True, null=True)
     location = models.CharField(_("Location"), blank=True, max_length=255)
 
     def __str__(self):
-        return self.title or f"PokerEvent {self.id}"
+        return self.title or f"Event {self.id}"
 
     @property
     def is_active(self) -> bool:
-        return self.start_date <= timezone.now().date() <= self.end_date
+        return self.start_date <= timezone.now() <= self.end_date
 
     @property
     def is_finished(self) -> bool:
-        return timezone.now().date() > self.end_date
+        return timezone.now() > self.end_date
 
     @property
     def is_rsvp_open(self) -> bool:
         # Can only RSVP upto 2 weeks before of the event
         today = timezone.now().date()
-        rsvp_open_date = today - timezone.timedelta(days=14)
+        rsvp_open_date = today - timezone.timedelta(days=MINIMUM_DAYS_FOR_EVENT_RSVP)
         return not self.is_active and not self.is_finished and rsvp_open_date <= today
 
-    def rsvp_user(self, user: User, status: str) -> "PokerEventRSVP":
-        rsvp, created = PokerEventRSVP.objects.get_or_create(
+    def rsvp_user(self, user: User, status: str) -> "EventRSVP":
+        rsvp, created = EventRSVP.objects.get_or_create(
             user=user,
             event=self,
             defaults={"status": status},
         )
-        if created: # Already RSVPed
+        if created:  # Already RSVPed
             return False
 
         rsvp.save()
         return rsvp
 
-    def check_in_user(self, user: User) -> "PokerEventAttendee":
-        attendee, created = PokerEventAttendee.objects.get_or_create(
+    def add_user_participant(self, user: User) -> "Participant":
+        p, created = Participant.objects.get_or_create(
             user=user,
             event=self,
         )
         if created:  # Already checked in
             return False
-        attendee.save()
-        return attendee
+        p.save()
+        return p
 
-    def check_in_guest(self, guest_name: str, guest_email: str) -> "PokerEventAttendee":
-        attendee, created = PokerEventAttendee.objects.get_or_create(
+    def add_guest_participant(self, guest_name: str, guest_email: str) -> "Participant":
+        p, created = Participant.objects.get_or_create(
             event=self,
             user=None,
             guest_name=guest_name,
@@ -87,29 +105,36 @@ class PokerEvent(AbstractTimestampedModel):
         )
         if not created:  # Already checked in
             return False
-        attendee.save()
-        return attendee
+        p.save()
+        return p
 
-class PokerEventAttendee(AbstractTimestampedModel):
+    def user_is_rsvped(self, user: User) -> bool:
+        return EventRSVP.objects.filter(user=user, event=self).exists()
+
+    def user_is_participant(self, user: User) -> bool:
+        return Participant.objects.filter(user=user, event=self).exists()
+
+
+class Participant(AbstractTimestampedModel):
     event = models.ForeignKey(
-        PokerEvent,
+        Event,
         on_delete=models.CASCADE,
-        related_name="attendees",
+        related_name="participants",
         verbose_name=_("Event"),
     )
     user = models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE,
-        related_name="event_attendances",
+        related_name="participations",
         verbose_name=_("User"),
     )
     final_position = models.PositiveIntegerField(_("Rank"), null=True, blank=True)
 
     def __str__(self):
-        return f"Attendee {self.id} {self.user.username} for Event {self.event.id}"
+        return f"Participant {self.id} {self.user.username} for Event {self.event.id}"
 
 
-class PokerEventRSVP(AbstractTimestampedModel):
+class EventRSVP(AbstractTimestampedModel):
     GOING = "going"
     LATE = "late"
     MAYBE = "maybe"
@@ -120,12 +145,17 @@ class PokerEventRSVP(AbstractTimestampedModel):
         (MAYBE, _("Maybe")),
     ]
 
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="rsvps",
+    )
     user = models.ForeignKey(
         "users.User",
         null=True,
         blank=True,
         on_delete=models.CASCADE,
-        related_name="event_rsvps",
+        related_name="rsvps",
     )
     # OR
     guest_name = models.CharField(
@@ -136,11 +166,6 @@ class PokerEventRSVP(AbstractTimestampedModel):
         blank=True,
     )
 
-    event = models.ForeignKey(
-        PokerEvent,
-        on_delete=models.CASCADE,
-        related_name="rsvps",
-    )
     status = models.CharField(
         max_length=10,
         choices=STATUS_CHOICES,
@@ -176,3 +201,7 @@ class PokerEventRSVP(AbstractTimestampedModel):
             f"{self.user.username if self.user else self.guest_name} -"
             f"{self.event.title} ({self.status})"
         )
+
+    @property
+    def is_guest(self) -> bool:
+        return self.user is None
