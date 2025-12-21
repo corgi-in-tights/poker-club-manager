@@ -5,7 +5,7 @@ from .models import BlindsTemplate, BlindsTimer
 
 
 def active_timers(request: HttpRequest):
-    timers = BlindsTimer.objects.all().order_by("started_at")
+    timers = BlindsTimer.objects.all().order_by("created_at")
     return render(request, "timers/active.html", {"timers": timers})
 
 
