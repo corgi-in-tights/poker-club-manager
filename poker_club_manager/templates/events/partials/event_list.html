@@ -11,6 +11,8 @@
         {% include "events/partials/buttons/check_in.html" with event=event %}
 
         <a href="{% url 'events:detail' event.id %}">View Details</a>
+
+        <button>Share</button>
     </div>
 {% empty %}
     <p>No events available.</p>

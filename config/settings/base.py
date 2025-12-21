@@ -91,7 +91,7 @@ LOCAL_APPS = [
     "poker_club_manager.users",
     "poker_club_manager.events",
     "poker_club_manager.points",
-    "poker_club_manager.blinds",
+    "poker_club_manager.timers",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS

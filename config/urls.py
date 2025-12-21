@@ -20,6 +20,7 @@ urlpatterns = [
     path("accounts/", include("allauth.urls")),
     path("events/", include("poker_club_manager.events.urls", namespace="events")),
     path("leaderboard/", include("poker_club_manager.points.urls", namespace="points")),
+    path("timers/", include("poker_club_manager.timers.urls", namespace="timers")),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
 ]
 

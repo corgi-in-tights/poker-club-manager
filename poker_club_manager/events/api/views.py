@@ -33,13 +33,15 @@ class EventViewSet(viewsets.ModelViewSet):
         if self.action in {"list", "retrieve"}:
             return [permissions.AllowAny()]
 
-        if self.action in {"rsvp", "check_in"}:
+        if self.action in {"rsvp"}:
             return [permissions.IsAuthenticated()]
 
         if self.action in {
-            "add_user_attendee",
-            "remove_user_attendee",
-            "rank_user_attendee",
+            "add_participant",
+            "remove_participant",
+            "rank_participant",
+            "check_in_user",
+            "check_in_guest",
         }:
             return [CanHost()]
 
@@ -48,8 +50,7 @@ class EventViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"], url_path="rsvp")
     def rsvp(self, request, pk=None):
         event = self.get_object()
-        event.rsvp_user(request.user,
-                                 request.data.get("status", EventRSVP.GOING))
+        event.rsvp_user(request.user, request.data.get("status", EventRSVP.GOING))
         return Response(
             {"status": "rsvp updated"},
             status=status.HTTP_200_OK,
@@ -58,9 +59,9 @@ class EventViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["post"],
-        url_path="add-user-attendee",
+        url_path="add-participant",
     )
-    def add_user_attendee(self, request, pk=None):
+    def add_participant(self, request, pk=None):
         event = self.get_object()
         if "user_id" not in request.data:
             return Response(
@@ -85,9 +86,9 @@ class EventViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=["post"],
-        url_path="remove-user-attendee",
+        url_path="remove-participant",
     )
-    def remove_user_attendee(self, request, pk=None):
+    def remove_participant(self, request, pk=None):
         event = self.get_object()
         if "user_id" not in request.data:
             return Response(
@@ -146,13 +147,13 @@ class EventViewSet(viewsets.ModelViewSet):
         )
 
 
-class EventRSVPViewSet(viewsets.ModelViewSet):
+class EventRSVPViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EventRSVP.objects.all()
     serializer_class = EventRSVPSerializer
     permissions = [CanHost()]
 
 
-class ParticipantViewSet(viewsets.ModelViewSet):
+class ParticipantViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
     permissions = [CanHost()]
