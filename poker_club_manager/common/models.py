@@ -45,6 +45,10 @@ class Season(AbstractTimestampedModel):
         membership.save()
         return membership
 
+    @classmethod
+    def get_active_season(cls):
+        return cls.objects.filter(is_active=True).first()
+
 
 class SeasonMembership(AbstractTimestampedModel):
     user = models.ForeignKey(
@@ -72,7 +76,9 @@ class SeasonMembership(AbstractTimestampedModel):
 
 class MemberStatistics(AbstractTimestampedModel):
     membership = models.OneToOneField(
-        SeasonMembership, related_name="statistics", on_delete=models.CASCADE,
+        SeasonMembership,
+        related_name="statistics",
+        on_delete=models.CASCADE,
     )
 
     class Meta:

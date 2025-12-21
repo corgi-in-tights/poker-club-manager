@@ -62,6 +62,8 @@ class BlindsLevel(AbstractTimestampedModel):
     big_blind = models.PositiveIntegerField(null=True, blank=True)
 
     class Meta:
+        verbose_name = _("Blinds Level")
+        verbose_name_plural = _("Blinds Levels")
         ordering = ["level_index"]
 
     def __str__(self):
@@ -88,6 +90,10 @@ class BlindsTimer(AbstractTimestampedModel):
     is_paused = models.BooleanField(default=False)
     paused_at = models.DateTimeField(null=True, blank=True)
     accumulated_pause_seconds = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = _("Blinds Timer")
+        verbose_name_plural = _("Blinds Timers")
 
     def __str__(self):
         return f"Clock for Event {self.event.id}"

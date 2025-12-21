@@ -1,6 +1,7 @@
 import logging
 from types import SimpleNamespace
 
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.http import Http404, HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -10,7 +11,7 @@ from django.views.generic import DetailView
 from poker_club_manager.common.utils.params import parse_int
 
 from .filters import EventBrowseFilter
-from .forms import GuestCheckInForm
+from .forms import EventForm, GuestCheckInForm
 from .models import Event
 
 logger = logging.getLogger(__name__)
@@ -137,3 +138,18 @@ def check_in(request: HttpRequest, event_id: int):
             "guest_form": form,
         },
     )
+
+
+def create_event(request: HttpRequest):
+    if not request.user.has_perm("events.add_event"):
+        raise PermissionDenied
+
+    if request.method == "POST":
+        form = EventForm(request.POST)
+        if form.is_valid():
+            event = form.save()
+            return redirect("events:detail", event_id=event.id)
+    else:
+        form = EventForm()
+
+    return render(request, "events/create.html", {"form": form})

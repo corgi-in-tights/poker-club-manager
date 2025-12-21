@@ -4,7 +4,7 @@ from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from poker_club_manager.common.api.permissions import CanHost
+from poker_club_manager.common.api.permissions import CanManageEvent
 from poker_club_manager.events.models import Event, EventRSVP, Participant
 
 from .serializers import (
@@ -18,34 +18,15 @@ User = get_user_model()
 
 class EventViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.annotate(
-        going_count=Count(
-            "rsvps",
-            filter=Q(rsvps__status=EventRSVP.GOING),
-        ),
-        late_count=Count(
-            "rsvps",
-            filter=Q(rsvps__status=EventRSVP.LATE),
-        ),
+        going_count=Count("rsvps", filter=Q(rsvps__status=EventRSVP.GOING)),
+        late_count=Count("rsvps", filter=Q(rsvps__status=EventRSVP.LATE)),
     )
     serializer_class = EventSerializer
 
     def get_permissions(self):
-        if self.action in {"list", "retrieve"}:
-            return [permissions.AllowAny()]
-
         if self.action in {"rsvp"}:
-            return [permissions.IsAuthenticated()]
-
-        if self.action in {
-            "add_participant",
-            "remove_participant",
-            "rank_participant",
-            "check_in_user",
-            "check_in_guest",
-        }:
-            return [CanHost()]
-
-        return [permissions.IsAdminUser()]
+            self.permission_classes = [permissions.IsAuthenticated()]
+        return [CanManageEvent()]
 
     @action(detail=True, methods=["post"], url_path="rsvp")
     def rsvp(self, request, pk=None):
@@ -150,10 +131,10 @@ class EventViewSet(viewsets.ModelViewSet):
 class EventRSVPViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EventRSVP.objects.all()
     serializer_class = EventRSVPSerializer
-    permissions = [CanHost()]
+    permission_classes = [CanManageEvent()]
 
 
 class ParticipantViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
-    permissions = [CanHost()]
+    permission_classes = [CanManageEvent()]

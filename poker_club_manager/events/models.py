@@ -15,6 +15,7 @@ MAXIMUM_DAYS_FOR_EVENT_RSVP = 14
 
 logger = logging.getLogger(__name__)
 
+
 class EventQuerySet(models.QuerySet):
     def search(self, query: str):
         logger.info("Searching events with query: %s", query)
@@ -86,6 +87,8 @@ class Event(AbstractTimestampedModel):
         on_delete=models.CASCADE,
         related_name="events",
         verbose_name=_("Season"),
+        null=True,
+        blank=True,
     )
     title = models.CharField(_("Title"), max_length=255)
     description = models.CharField(_("Description"), blank=True, max_length=1024)
@@ -93,6 +96,11 @@ class Event(AbstractTimestampedModel):
     start_date = models.DateTimeField(_("Start Date"))
     end_date = models.DateTimeField(_("End Date"), blank=True, null=True)
     location = models.CharField(_("Location"), blank=True, max_length=255)
+
+    class Meta:
+        permissions = [
+            ("manage_event", "Can manage event"),
+        ]
 
     def __str__(self):
         return self.title or f"Event {self.id}"
@@ -139,8 +147,9 @@ class Event(AbstractTimestampedModel):
         if not created:  # Already checked in
             return False
 
-        if not self.season.user_is_member(user):
-            self.season.create_user_membership(user)
+        if self.season is not None:
+            if not self.season.user_is_member(user):
+                self.season.create_user_membership(user)
 
         p.save()
         return p
@@ -253,7 +262,7 @@ class EventRSVP(AbstractTimestampedModel):
         constraints = [
             # Must be either a user OR a guest
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(user__isnull=False, guest_name="")
                     | models.Q(user__isnull=True, guest_name__gt="")
                 ),
