@@ -45,15 +45,11 @@ class EventViewSet(viewsets.ModelViewSet):
 
         return [permissions.IsAdminUser()]
 
-    @action(detail=True, methods=["post"])
+    @action(detail=True, methods=["post"], url_path="rsvp")
     def rsvp(self, request, pk=None):
         event = self.get_object()
-        result = event.rsvp_user(request.user, request.data.get("status"))
-        if not result:
-            return Response(
-                {"status": "already rsvped"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        event.rsvp_user(request.user,
+                                 request.data.get("status", EventRSVP.GOING))
         return Response(
             {"status": "rsvp updated"},
             status=status.HTTP_200_OK,
@@ -80,12 +76,7 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        result = event.check_in_user(user)
-        if not result:
-            return Response(
-                {"status": "already checked in"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        event.check_in_user(user)
         return Response(
             {"status": "check-in updated"},
             status=status.HTTP_200_OK,
@@ -112,12 +103,7 @@ class EventViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        result = event.check_in_user(user)
-        if not result:
-            return Response(
-                {"status": "already checked in"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        event.check_in_user(user)
         return Response(
             {"status": "check-in updated"},
             status=status.HTTP_200_OK,

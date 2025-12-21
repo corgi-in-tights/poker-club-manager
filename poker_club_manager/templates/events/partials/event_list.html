@@ -1,0 +1,17 @@
+{% for event in events %}
+    <div class="event">
+        <h2>{{ event.title }}</h2>
+        <p>Starts {{ event.start_date|date:"ha, F j, Y" }}</p>
+        <p>Ends {{ event.end_date|date:"F j, Y - h:i a" }}</p>
+
+        {% if request.user.is_authenticated %}
+            {% include "events/partials/buttons/rsvp.html" with event=event %}
+        {% endif %}
+
+        {% include "events/partials/buttons/check_in.html" with event=event %}
+
+        <a href="{% url 'events:detail' event.id %}">View Details</a>
+    </div>
+{% empty %}
+    <p>No events available.</p>
+{% endfor %}

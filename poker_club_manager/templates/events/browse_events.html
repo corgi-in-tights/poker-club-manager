@@ -4,32 +4,6 @@
 
 Events Home Page
 
-{% for event in events %}
-    <div class="event">
-        <h2>{{ event.title }}</h2>
-        <p>{{ event.start_date|date:"F j, Y" }}</p>
-        <p>Created at: {{ event.created_at|date:"F j, Y, g:i a" }}</p>
-        <p>Last updated: {{ event.updated_at|date:"F j, Y, g:i a" }}</p>
-
-
-
-        {% if event.is_rsvped %}
-            <p>Already RSVPed</p>
-        {% else %}
-            <a href="{% url 'events:check_in' event.id %}">RSVP</a>
-        {% endif %}
-
-
-        {% if event.is_checked_in %}
-            <p>Already checked in</p>
-        {% else %}
-            <a href="{% url 'events:check_in' event.id %}">Check In</a>
-        {% endif %}
-
-        <a href="{% url 'events:detail' event.id %}">View Details</a>
-    </div>
-{% empty %}
-    <p>No events available.</p>
-{% endfor %}
+{% include "events/partials/event_list.html" with events=events %}
 
 {% endblock content %}
