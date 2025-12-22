@@ -314,3 +314,15 @@ SPECTACULAR_SETTINGS = {
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/",
 }
+
+
+# Points settings
+POINTS_DEFAULT_SCORING_STRATEGY = env(
+    "POINTS_DEFAULT_SCORING_STRATEGY",
+    default="buy_in_distribution",
+)
+
+POINTS_DEFAULT_DECAY_STRATEGY = env(
+    "POINTS_DEFAULT_DECAY_STRATEGY",
+    default="global_attendance",
+)

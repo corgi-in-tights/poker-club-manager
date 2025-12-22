@@ -1,13 +1,16 @@
 import logging
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
-from django.db.models import Count, Exists, OuterRef, Q
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
-from poker_club_manager.common.models import AbstractTimestampedModel
+from poker_club_manager.common.models import AbstractTimestampedModel, SeasonMembership
+
+from .signals import event_completed
 
 User = get_user_model()
 
@@ -99,6 +102,11 @@ class Event(AbstractTimestampedModel):
     )
     title = models.CharField(_("Title"), max_length=255)
     description = models.CharField(_("Description"), blank=True, max_length=1024)
+    scoring_strategy = models.CharField(
+        max_length=50,
+        blank=True,
+        default=settings.POINTS_DEFAULT_SCORING_STRATEGY,
+    )
 
     start_date = models.DateTimeField(_("Start Date"))
     end_date = models.DateTimeField(_("End Date"), blank=True, null=True)
@@ -187,6 +195,27 @@ class Event(AbstractTimestampedModel):
     def user_is_participant(self, user: User) -> bool:
         return Participant.objects.filter(user=user, event=self).exists()
 
+    def get_total_participants(self) -> int:
+        return self.participants.count() + self.guests.count()
+
+    def complete_event(self):
+        if not self.is_finished:
+            msg = "Cannot complete an event that is not finished."
+            raise ValueError(msg)
+
+        event_completed.send(sender=self.__class__, event=self)
+
+
+class ParticipantQuerySet(models.QuerySet):
+    def with_membership_for_season(self, season):
+        return self.select_related("user").prefetch_related(
+            Prefetch(
+                "user__memberships",
+                queryset=SeasonMembership.objects.filter(season=season),
+                to_attr="membership_for_season",
+            ),
+        )
+
 
 class Participant(AbstractTimestampedModel):
     event = models.ForeignKey(
@@ -206,9 +235,21 @@ class Participant(AbstractTimestampedModel):
         null=True,
         blank=True,
     )
+    eliminations = models.PositiveIntegerField(
+        _("Eliminations"),
+        default=0,
+    )
+
+    objects = ParticipantQuerySet.as_manager()
 
     def __str__(self):
         return f"Participant {self.id} {self.user.username} for Event {self.event.id}"
+
+    @property
+    def season_membership(self) -> SeasonMembership | None:
+        if self.event.season is None:
+            return None
+        return self.event.season.get_membership_for_user(self.user)
 
 
 class GuestParticipant(AbstractTimestampedModel):
@@ -280,14 +321,6 @@ class EventRSVP(AbstractTimestampedModel):
         on_delete=models.CASCADE,
         related_name="rsvps",
     )
-    # OR
-    guest_name = models.CharField(
-        max_length=100,
-        blank=True,
-    )
-    guest_email = models.EmailField(
-        blank=True,
-    )
 
     status = models.CharField(
         max_length=10,
@@ -304,33 +337,16 @@ class EventRSVP(AbstractTimestampedModel):
         verbose_name = _("Event RSVP")
         verbose_name_plural = _("Event RSVPs")
         constraints = [
-            # Must be either a user OR a guest
-            models.CheckConstraint(
-                condition=(
-                    models.Q(user__isnull=False, guest_name="")
-                    | models.Q(user__isnull=True, guest_name__gt="")
-                ),
-                name="rsvp_user_or_guest",
-            ),
             # One RSVP per user per event
             models.UniqueConstraint(
                 fields=["user", "event"],
                 condition=models.Q(user__isnull=False),
                 name="unique_user_rsvp",
             ),
-            # One RSVP per guest per event (email preferred)
-            models.UniqueConstraint(
-                fields=["guest_email", "event"],
-                condition=models.Q(guest_email__gt=""),
-                name="unique_guest_rsvp",
-            ),
         ]
 
     def __str__(self):
-        return (
-            f"{self.user.username if self.user else self.guest_name} -"
-            f"{self.event.title} ({self.status})"
-        )
+        return f"{self.user.username} - {self.event.title} ({self.status})"
 
     @property
     def is_guest(self) -> bool:
