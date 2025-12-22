@@ -82,7 +82,6 @@ THIRD_PARTY_APPS = [
     "rest_framework.authtoken",
     "corsheaders",
     "drf_spectacular",
-    "gsheets",
 ]
 
 LOCAL_APPS = [
@@ -314,10 +313,4 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "1.0.0",
     "SERVE_PERMISSIONS": ["rest_framework.permissions.IsAdminUser"],
     "SCHEMA_PATH_PREFIX": "/api/",
-}
-
-# STORAGE
-# ------------------------------------------------------------------------------
-GSHEETS = {
-    "CLIENT_SECRETS": env.str("GSHEETS_CLIENT_SECRETS", default=""),
 }
