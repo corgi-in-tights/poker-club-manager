@@ -3,27 +3,21 @@
 <nav class="page-nav">
   {% with prev=page|add:"-1" next=page|add:"1" %}
     <div class="page-nav__left">
-      {% if page > 1 %}
-        <a class="page-nav__btn"
-           href="?{% querystring request p=prev %}"
-           data-page="{{ prev }}"
-           rel="prev">Previous</a>
-      {% else %}
-        <span class="page-nav__btn page-nav__btn--disabled">Previous</span>
-      {% endif %}
+      <button class="page-button page-nav__btn"
+              data-page="{{ prev }}"
+              rel="prev"
+              {% if page <= 1 %}disabled aria-disabled="true"{% endif %}>Previous</button>
     </div>
+
     <div class="page-nav__center">
       <span class="page-nav__pill">Page&nbsp;{{ page }}/{{ max_page }}</span>
     </div>
+    
     <div class="page-nav__right">
-      {% if page < max_page %}
-        <a class="page-nav__btn"
-           href="?{% querystring request p=next %}"
-           data-page="{{ next }}"
-           rel="next">Next</a>
-      {% else %}
-        <span class="page-nav__btn page-nav__btn--disabled" aria-disabled="true">Next</span>
-      {% endif %}
+      <button class="page-button page-nav__btn"
+              data-page="{{ next }}"
+              rel="next"
+              {% if page >= max_page %}disabled aria-disabled="true"{% endif %}>Next</button>
     </div>
   {% endwith %}
 </nav>
