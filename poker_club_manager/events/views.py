@@ -10,14 +10,14 @@ from django.views.generic import DetailView
 
 from poker_club_manager.common.utils.params import parse_int
 
-from .filters import EventBrowseFilter
+from .filters import EventListFilter
 from .forms import EventForm, GuestCheckInForm
 from .models import Event
 
 logger = logging.getLogger(__name__)
 
 
-def browse_events(request: HttpRequest):
+def list_events(request: HttpRequest):
     default_filters = SimpleNamespace(
         {
             "order": "relevance",
@@ -34,7 +34,7 @@ def browse_events(request: HttpRequest):
     )
 
     events = (
-        EventBrowseFilter(
+        EventListFilter(
             search_query=search_query,
             order=order,
             include_finished=include_finished == "1",
@@ -73,7 +73,7 @@ def browse_events(request: HttpRequest):
 
     return render(
         request,
-        "events/browse_events.html",
+        "events/list.html",
         context={
             **context,
             "filters": SimpleNamespace(
@@ -91,7 +91,7 @@ def browse_events(request: HttpRequest):
 
 class EventDetailView(DetailView):
     model = Event
-    template_name = "events/event_detail.html"
+    template_name = "events/detail.html"
     context_object_name = "event"
     pk_url_kwarg = "event_id"
 
@@ -153,3 +153,21 @@ def create_event(request: HttpRequest):
         form = EventForm()
 
     return render(request, "events/create.html", {"form": form})
+
+
+def manage_event(request: HttpRequest, event_id: int):
+    event = get_object_or_404(
+        Event.objects.annotate_rsvp_count(),
+        pk=event_id,
+    )
+
+    if not request.user.has_perm("events.manage_event", event):
+        raise PermissionDenied
+
+    context = {
+        "event": event,
+        "participants": event.participants.order_by("user__username"),
+        "guests": event.guests.order_by("name"),
+        "rsvps": event.rsvps.unarrived().order_by("user__username"),
+    }
+    return render(request, "events/manage.html", context=context)

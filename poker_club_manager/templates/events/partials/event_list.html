@@ -2,25 +2,37 @@
 {% for event in events %}
   <div class="event">
     <h2>{{ event.title }}</h2>
+    {% if event.description %}<p>{{ event.description }}</p>{% endif %}
     <p>Starts {{ event.start_date|date:"ha, F j, Y" }}</p>
     <p>Ends {{ event.end_date|date:"F j, Y - h:i a" }}</p>
-    {% if request.user.is_authenticated %}
-      {% include "events/partials/buttons/rsvp.html" with event=event %}
-    {% endif %}
     {% if event.is_active %}
-      {% include "events/partials/buttons/check_in.html" with event=event %}
+      {% if event.is_checked_in %}
+        <p>Already checked in</p>
+      {% else %}
+        <a href="{% url 'events:check_in' event.id %}">Check In</a>
+      {% endif %}
+    {% elif event.is_rsvp_open %}
+      {% if not request.user.is_authenticated %}
+        <span>Please log in to RSVP</span>
+      {% elif event.is_rsvped %}
+        <p>Already RSVPed</p>
+      {% else %}
+        <button class="rsvp-button"
+                data-rsvp-url="{% url 'api:event-rsvp' event.id %}">RSVP</button>
+      {% endif %}
+    {% elif event.is_finished %}
+      <span>Event has finished</span>
+    {% else %}
+      <span>RSVP opens on {{ event.rsvp_start_date|date:"F j, Y" }}</span>
+    {% endif %}
+    {% if perms.events.manage_event %}
+      <a href="{% url 'events:manage' event.id %}">Manage</a>
     {% endif %}
     <a href="{% url 'events:detail' event.id %}">View Details</a>
     <button type="button"
-            data-url="{{ request.build_absolute_uri|escape }}"
+            data-url="{% url 'events:detail' event.id %}"
             onclick="copyUrl(this)">Copy URL</button>
   </div>
 {% empty %}
   <p>No events available.</p>
 {% endfor %}
-
-<script>
-function copyUrl(btn) {
-    navigator.clipboard.writeText(btn.dataset.url);
-}
-</script>

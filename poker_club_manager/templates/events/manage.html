@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <a href="{% url 'events:list' %}">Go Back</a>
+  <h1>Managing Event {{ event.title }}</h1>
+  <div>
+    <h3>Participants</h3>
+    <table>
+      {% for participant in participants %}
+        <tr>
+          <td>{{ forloop.counter }}.</td>
+          <td>{{ participant.user.username }}</td>
+          <td>{{ participant.user.name }}</td>
+          <td>{{ participant.user.email }}</td>
+          <td>{{ participant.final_position }}</td>
+          <td>
+            <button data-id="{{ participant.id }}">Remove</button>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="2">No participants yet.</td>
+        </tr>
+      {% endfor %}
+    </table>
+    <form>
+      <input type="text"
+             name="participant_identifier"
+             placeholder="Username or Email"
+             required />
+      <button name="action">Add participant</button>
+    </form>
+  </div>
+  <div>
+    <h3>Guests</h3>
+    <table>
+      {% for guest in guests %}
+        <tr>
+          <td>{{ forloop.counter }}.</td>
+          <td>{{ guest.name }}</td>
+          <td>{{ guest.email }}</td>
+          <td>{{ guest.final_position }}</td>
+          <td>
+            <button data-id="{{ guest.id }}">Remove</button>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="2">No guests yet.</td>
+        </tr>
+      {% endfor %}
+    </table>
+    <form>
+      <input type="text" name="guest_username" placeholder="Username" required />
+      <input type="email" name="guest_email" placeholder="Email" required />
+      <button name="action">Add guest</button>
+    </form>
+  </div>
+  <div>
+    <h3>RSVPs</h3>
+    <p>Going: {{ event.going_count }}, Late: {{ event.late_count }}</p>
+    <table>
+      {% for rsvp in rsvps %}
+        <tr>
+          <td>{{ forloop.counter }}.</td>
+          <td>{{ rsvp.user.username }}</td>
+          <td>{{ rsvp.user.name }}</td>
+          <td>{{ rsvp.get_status_display }}</td>
+          <td>
+            <button data-id="{{ rsvp.id }}">Remove</button>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="2">No RSVPs yet.</td>
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+{% endblock content %}

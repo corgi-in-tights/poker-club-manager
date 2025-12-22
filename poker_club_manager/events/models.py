@@ -1,6 +1,7 @@
 import logging
 
 from django.contrib.auth import get_user_model
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Count, Exists, OuterRef, Q
 from django.utils import timezone
@@ -157,6 +158,15 @@ class Event(AbstractTimestampedModel):
             if not self.season.user_is_member(user):
                 self.season.create_user_membership(user)
 
+        # If user RSVP'd
+        try:
+            rsvp = EventRSVP.objects.get(user=user, event=self)
+            rsvp.status = EventRSVP.ARRIVED
+            rsvp.arrival_time = timezone.now()
+            rsvp.save()
+        except ObjectDoesNotExist:
+            pass
+
         p.save()
         return p
 
@@ -226,12 +236,33 @@ class GuestParticipant(AbstractTimestampedModel):
         return f"Guest Participant {self.id} {self.name} for Event {self.event.id}"
 
 
+class EventRSVPQueryset(models.QuerySet):
+    def arrived(self):
+        return self.filter(status=EventRSVP.ARRIVED)
+
+    def unarrived(self):
+        return self.filter(~models.Q(status=EventRSVP.ARRIVED))
+
+    def going(self):
+        return self.filter(status=EventRSVP.GOING)
+
+    def late(self):
+        return self.filter(status=EventRSVP.LATE)
+
+    def maybe(self):
+        return self.filter(status=EventRSVP.MAYBE)
+
+
 class EventRSVP(AbstractTimestampedModel):
+    objects = EventRSVPQueryset.as_manager()
+
+    ARRIVED = "arrived"
     GOING = "going"
     LATE = "late"
     MAYBE = "maybe"
 
     STATUS_CHOICES = [
+        (ARRIVED, _("Arrived")),
         (GOING, _("Going")),
         (LATE, _("Late")),
         (MAYBE, _("Maybe")),
@@ -263,8 +294,15 @@ class EventRSVP(AbstractTimestampedModel):
         choices=STATUS_CHOICES,
         default=GOING,
     )
+    arrival_time = models.DateTimeField(
+        _("Arrival Time"),
+        null=True,
+        blank=True,
+    )
 
     class Meta:
+        verbose_name = _("Event RSVP")
+        verbose_name_plural = _("Event RSVPs")
         constraints = [
             # Must be either a user OR a guest
             models.CheckConstraint(

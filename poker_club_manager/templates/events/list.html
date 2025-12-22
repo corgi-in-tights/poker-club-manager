@@ -2,10 +2,11 @@
 
 {% load static %}
 
-{% block javascript %}
+{% block compressed_js %}
   {{ block.super }}
-  <script src="{% static 'js/events/browse_events.js' %}"></script>
-{% endblock javascript %}
+  <script defer src="{% static 'js/filtered_list.js' %}"></script>
+  <script defer src="{% static 'js/events/list.js' %}"></script>
+{% endblock compressed_js %}
 {% block content %}
   <h1>Browse Events</h1>
   {% if perms.events.add_event %}

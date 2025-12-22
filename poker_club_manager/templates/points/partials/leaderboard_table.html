@@ -1,5 +1,19 @@
-{% for member in members %}
-  <div>{{ member.user.username }} - {{ member.points }} points</div>
-{% empty %}
-  <p>No members found for this season.</p>
-{% endfor %}
+{% include "points/partials/page_navigator.html" with page=page max_page=max_page %}
+<table class="leaderboard">
+  <thead>
+    <tr>
+      <th>Rank</th>
+      <th>Name</th>
+      <th>Points</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for member in members %}
+      <tr>
+        <td>{{ forloop.counter }}</td>
+        <td>{{ member.user.name }}</td>
+        <td>{{ member.points }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

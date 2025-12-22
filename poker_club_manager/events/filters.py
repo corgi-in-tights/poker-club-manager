@@ -4,9 +4,9 @@ from .models import Event
 
 
 @dataclass(frozen=True)
-class EventBrowseFilter:
+class EventListFilter:
     """
-    Applies browse-time filtering and ordering
+    Applies list-time filtering and ordering
     to Event querysets based on user intent.
     """
 

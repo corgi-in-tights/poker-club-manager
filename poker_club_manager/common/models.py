@@ -50,6 +50,17 @@ class Season(AbstractTimestampedModel):
         return cls.objects.filter(is_active=True).first()
 
 
+class SeasonMembershipQuerySet(models.QuerySet):
+    def with_minimum_points(self, min_points: int):
+        return self.filter(points__gte=min_points)
+
+    def ordered_by_points(self):
+        return self.order_by("-points", "user__username")
+
+    def with_name_containing(self, substring: str):
+        return self.filter(user__username__icontains=substring)
+
+
 class SeasonMembership(AbstractTimestampedModel):
     user = models.ForeignKey(
         User,
@@ -66,6 +77,8 @@ class SeasonMembership(AbstractTimestampedModel):
     points = models.IntegerField(_("Points"), default=0)
     rebuys = models.PositiveIntegerField(_("Rebuys"), default=0)
     special_data = models.JSONField(_("Special Data"), default=dict, blank=True)
+
+    objects = SeasonMembershipQuerySet.as_manager()
 
     class Meta:
         unique_together = ("user", "season")
