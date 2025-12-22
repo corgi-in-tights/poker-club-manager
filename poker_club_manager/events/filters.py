@@ -9,6 +9,7 @@ class EventBrowseFilter:
     Applies browse-time filtering and ordering
     to Event querysets based on user intent.
     """
+
     search_query: str | None = None
     order: str = "relevance"
     include_finished: bool = False
@@ -18,8 +19,11 @@ class EventBrowseFilter:
         """
         Entry point used by views.
         """
-        qs = Event.objects.unfinished() if not self.include_finished \
-                else Event.objects.all()
+        qs = (
+            Event.objects.unfinished()
+            if not self.include_finished
+            else Event.objects.all()
+        )
 
         if self.search_query:
             qs = qs.search(self.search_query)

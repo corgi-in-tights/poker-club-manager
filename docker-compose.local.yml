@@ -1,7 +1,7 @@
 volumes:
   poker_club_manager_local_postgres_data: {}
   poker_club_manager_local_postgres_data_backups: {}
-  
+
 
 services:
   django:

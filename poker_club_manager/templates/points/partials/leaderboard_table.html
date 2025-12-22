@@ -1,5 +1,5 @@
 {% for member in members %}
-    <div>{{ member.user.username }} - {{ member.points }} points</div>
+  <div>{{ member.user.username }} - {{ member.points }} points</div>
 {% empty %}
-    <p>No members found for this season.</p>
+  <p>No members found for this season.</p>
 {% endfor %}

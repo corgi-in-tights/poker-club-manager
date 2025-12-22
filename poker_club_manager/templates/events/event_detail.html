@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <div class="event">
-        <h2>{{ event.title }}</h2>
-        <p>{{ event.start_date|date:"F j, Y" }}</p>
-        <p>Created at: {{ event.created_at|date:"F j, Y, g:i a" }}</p>
-        <p>Last updated: {{ event.updated_at|date:"F j, Y, g:i a" }}</p>
-        {% if request.user.is_authenticated and event.is_rsvp_open %}
-            {% include "events/partials/buttons/rsvp.html" with event=event %}
-        {% endif %}
-        {% if event.is_active %}
-            {% include "events/partials/buttons/check_in.html" with event=event %}
-        {% endif %}
-    </div>
+  <div class="event">
+    <h2>{{ event.title }}</h2>
+    <p>{{ event.start_date|date:"F j, Y" }}</p>
+    <p>Created at: {{ event.created_at|date:"F j, Y, g:i a" }}</p>
+    <p>Last updated: {{ event.updated_at|date:"F j, Y, g:i a" }}</p>
+    {% if request.user.is_authenticated and event.is_rsvp_open %}
+      {% include "events/partials/buttons/rsvp.html" with event=event %}
+    {% endif %}
+    {% if event.is_active %}
+      {% include "events/partials/buttons/check_in.html" with event=event %}
+    {% endif %}
+  </div>
 {% endblock content %}

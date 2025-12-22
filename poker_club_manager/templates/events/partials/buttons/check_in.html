@@ -1,5 +1,5 @@
 {% if event.is_checked_in %}
-    <p>Already checked in</p>
+  <p>Already checked in</p>
 {% else %}
-    <a href="{% url 'events:check_in' event.id %}">Check In</a>
+  <a href="{% url 'events:check_in' event.id %}">Check In</a>
 {% endif %}

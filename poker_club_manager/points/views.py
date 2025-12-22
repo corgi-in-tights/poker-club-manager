@@ -27,6 +27,7 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
         {"season": season, "members": paged_members},
     )
 
+
 def archive(request: HttpRequest):
     seasons = Season.objects.get(is_active=False).order_by("-start_date")
     paged_seasons = Paginator(seasons, 20).page(request.GET.get("page", 1))

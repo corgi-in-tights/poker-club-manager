@@ -1,40 +1,40 @@
 {% if event.is_active %}
-    <span>Event is ongoing</span>
+  <span>Event is ongoing</span>
 {% elif not event.is_rsvp_open %}
-    <span>RSVP opens on {{ event.rsvp_start_date|date:"F j, Y" }}</span>
+  <span>RSVP opens on {{ event.rsvp_start_date|date:"F j, Y" }}</span>
 {% else %}
-    {% if event.is_rsvped %}
-        <p>Already RSVPed</p>
-    {% else %}
-        <button onclick="send_rsvp()"
-                data-api-url="{% url 'api:event-rsvp' event.id %}">RSVP</button>
-    {% endif %}
-    <script>
-      function send_rsvp() {
-        const button = event.target;
-        const apiUrl = button.getAttribute('data-api-url');
+  {% if event.is_rsvped %}
+    <p>Already RSVPed</p>
+  {% else %}
+    <button onclick="send_rsvp()"
+            data-api-url="{% url 'api:event-rsvp' event.id %}">RSVP</button>
+  {% endif %}
+  <script>
+    function send_rsvp() {
+      const button = event.target;
+      const apiUrl = button.getAttribute('data-api-url');
 
-        fetch(apiUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: JSON.stringify({
-              "status": "going"
-            })
+      fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+          },
+          body: JSON.stringify({
+            "status": "going"
           })
-          .then(response => {
-            if (response.ok) {
-              button.replaceWith('RSVP successful!');
-            } else {
-              alert('Failed to RSVP. Please try again.');
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred. Please try again.');
-          });
-      }
-    </script>
+        })
+        .then(response => {
+          if (response.ok) {
+            button.replaceWith('RSVP successful!');
+          } else {
+            alert('Failed to RSVP. Please try again.');
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('An error occurred. Please try again.');
+        });
+    }
+  </script>
 {% endif %}
