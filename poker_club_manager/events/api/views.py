@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Count, Q
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -17,15 +16,12 @@ User = get_user_model()
 
 
 class EventViewSet(viewsets.ModelViewSet):
-    queryset = Event.objects.annotate(
-        going_count=Count("rsvps", filter=Q(rsvps__status=EventRSVP.GOING)),
-        late_count=Count("rsvps", filter=Q(rsvps__status=EventRSVP.LATE)),
-    )
+    queryset = Event.objects.all().annotate_rsvp_count()
     serializer_class = EventSerializer
 
     def get_permissions(self):
         if self.action in {"rsvp"}:
-            self.permission_classes = [permissions.IsAuthenticated()]
+            return [permissions.IsAuthenticated()]
         return [CanManageEvent()]
 
     @action(detail=True, methods=["post"], url_path="rsvp")
@@ -131,10 +127,10 @@ class EventViewSet(viewsets.ModelViewSet):
 class EventRSVPViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = EventRSVP.objects.all()
     serializer_class = EventRSVPSerializer
-    permission_classes = [CanManageEvent()]
+    permission_classes = [CanManageEvent]
 
 
 class ParticipantViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Participant.objects.all()
     serializer_class = ParticipantSerializer
-    permission_classes = [CanManageEvent()]
+    permission_classes = [CanManageEvent]

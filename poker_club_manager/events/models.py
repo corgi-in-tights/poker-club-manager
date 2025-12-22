@@ -2,7 +2,7 @@ import logging
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.db.models import Exists, OuterRef, Q
+from django.db.models import Count, Exists, OuterRef, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -76,6 +76,12 @@ class EventQuerySet(models.QuerySet):
                     user=user,
                 ),
             ),
+        )
+
+    def annotate_rsvp_count(self):
+        return self.annotate(
+            going_count=Count("rsvps", filter=Q(rsvps__status=EventRSVP.GOING)),
+            late_count=Count("rsvps", filter=Q(rsvps__status=EventRSVP.LATE)),
         )
 
 
