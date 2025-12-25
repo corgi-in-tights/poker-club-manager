@@ -15,7 +15,6 @@
     <meta name="description"
           content="Self-hostable site designed for poker club management, including checking in, blind timers, etc." />
     <meta name="author" content="Reyaan C" />
-    <meta name="csrf-token" content="{{ csrf_token }}" />
     <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
     {% block css %}
       <!-- Latest compiled and minified Bootstrap CSS -->
@@ -24,10 +23,15 @@
             integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
             crossorigin="anonymous"
             referrerpolicy="no-referrer" />
+      <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
+              integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
+              crossorigin="anonymous"></script>
       <!-- Your stuff: Third-party CSS libraries go here -->
       <!-- This file stores project-specific CSS -->
       {% compress css %}
+      {% block compressed_css %}
         <link href="{% static 'css/project.css' %}" rel="stylesheet" />
+      {% endblock compressed_css %}
       {% endcompress %}
     {% endblock css %}
     <!-- Le javascript
@@ -40,6 +44,7 @@
               integrity="sha512-1/RvZTcCDEUjY/CypiMz+iqqtaoQfAITmNSJY17Myp4Ms5mdxPS5UV7iOfdZoxcGhzFbOm6sntTKJppjvuhg4g=="
               crossorigin="anonymous"
               referrerpolicy="no-referrer"></script>
+      <script src="{% static 'js/libs/htmx.min.js' %}"></script>
       <!-- Your stuff: Third-party javascript libraries go here -->
       <!-- place project specific Javascript in this file -->
       {% compress js %}
@@ -49,7 +54,7 @@
       {% endcompress %}
     {% endblock javascript %}
   </head>
-  <body class="{% block bodyclass %}{% endblock bodyclass %}">
+  <body class="{% block bodyclass %}{% endblock bodyclass %}" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {% block body %}
       <div class="mb-1">
         <nav class="navbar navbar-expand-md navbar-light bg-light">

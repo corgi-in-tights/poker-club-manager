@@ -22,3 +22,24 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
     def me(self, request):
         serializer = UserSerializer(request.user, context={"request": request})
         return Response(status=status.HTTP_200_OK, data=serializer.data)
+
+    @action(detail=False, url_path="fetch-matching-names")
+    def fetch_matching_names(self, request):
+        requested_query = request.query_params.get("query", "").strip()
+        if not requested_query:
+            return Response(
+                status=status.HTTP_400_BAD_REQUEST,
+                data={"detail": "Query parameter 'query' is required."},
+            )
+
+        users = (
+            User.objects
+            .only("id", "username", "name")
+            .filter_by_name(requested_query)[:3]
+        )
+        serializer = UserSerializer(users, many=True, context={"request": request})
+
+        return Response(
+            status=status.HTTP_200_OK,
+            data={"results": serializer.data},
+        )

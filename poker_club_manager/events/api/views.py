@@ -24,10 +24,10 @@ class EventViewSet(viewsets.ModelViewSet):
             return [permissions.IsAuthenticated()]
         return [CanManageEvent()]
 
-    @action(detail=True, methods=["post"], url_path="rsvp")
-    def rsvp(self, request, pk=None):
+    @action(detail=True, methods=["post"], url_path="cancel-rsvp")
+    def cancel_rsvp(self, request, pk=None):
         event = self.get_object()
-        event.rsvp_user(request.user, request.data.get("status", EventRSVP.GOING))
+        event.cancel_rsvp_user(request.user)
         return Response(
             {"status": "rsvp updated"},
             status=status.HTTP_200_OK,

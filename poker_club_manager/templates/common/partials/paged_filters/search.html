@@ -1,0 +1,11 @@
+<input type="text"
+        class="filter"
+        id="search-filter"
+        name="q"
+        placeholder="Search events..."
+        value="{{ current }}"
+        hx-trigger="input changed delay:250ms"
+        hx-get="{{ update_url }}"
+        hx-target="{{ update_element }}"
+        hx-include=".filter,#current-page"
+        hx-on::after-request="updateHistory()" />

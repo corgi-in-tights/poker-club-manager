@@ -11,3 +11,8 @@ urlpatterns = [
     path("create/", views.create_event, name="create"),
     path("<int:event_id>/manage/", views.manage_event, name="manage"),
 ]
+
+# Partials
+urlpatterns += [
+    path("_rsvp_button/<int:event_id>", views.rsvp_button, name="rsvp_button"),
+]

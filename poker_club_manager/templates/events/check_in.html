@@ -1,26 +1,32 @@
 {% extends "base.html" %}
 
 {% block content %}
-  {% if request.user.is_authenticated %}
-    <form method="post">
-      {% csrf_token %}
-      <button type="submit">Check in as {{ request.user.username }}</button>
-    </form>
-    <form method="post"
-          action="{% url 'account_logout' %}?next={{ request.path }}">
-      {% csrf_token %}
-      <button type="submit">Not you? Log out</button>
-    </form>
+  <h1>Check In for {{ event.title }}</h1>
+  {% if is_checked_in %}
+    <p>You are checked in for {{ event.title }}.</p>
   {% else %}
-    <p>Please log in to check in as a member.</p>
-    <a href="{% url 'account_login' %}">Log In</a>
-    <a href="{% url 'account_signup' %}">Sign Up</a>
-    <p>Or check in as a guest</p>
-    <form method="post">
-      {% csrf_token %}
-      <input type="username" name="name" placeholder="My Name" />
-      <input type="email" name="email" placeholder="myemail@example.com" />
-      <button type="submit">Check in as guest</button>
-    </form>
+    {% if request.user.is_authenticated %}
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit">Check in as {{ request.user.username }}</button>
+      </form>
+      <form method="post"
+            action="{% url 'account_logout' %}?next={{ request.path|urlencode }}">
+        {% csrf_token %}
+        <button type="submit">Not you? Log out</button>
+      </form>
+    {% else %}
+      <p>Please log in to check in as a member.</p>
+      <a href="{% url 'account_login' %}?next={{ request.path|urlencode }}">Log In</a>
+      <a href="{% url 'account_signup' %}?next={{ request.path|urlencode }}">Sign Up</a>
+      <p>Or check in as a guest</p>
+      <form method="post">
+        {% csrf_token %}
+        <input type="username" name="name" placeholder="My Name" />
+        <input type="email" name="email" placeholder="myemail@example.com" />
+        <button type="submit">Check in as guest</button>
+      </form>
+    {% endif %}
   {% endif %}
+  <a href="{% url 'events:list' %}">Back to events</a>
 {% endblock content %}

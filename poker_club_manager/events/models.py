@@ -152,7 +152,15 @@ class Event(AbstractTimestampedModel):
             return False
 
         rsvp.save()
-        return rsvp
+        return True
+
+    def cancel_rsvp_user(self, user: User) -> bool:
+        try:
+            rsvp = EventRSVP.objects.get(user=user, event=self)
+            rsvp.delete()
+        except ObjectDoesNotExist:
+            return False
+        return True
 
     def add_user_participant(self, user: User) -> "Participant":
         p, created = Participant.objects.get_or_create(
@@ -163,7 +171,7 @@ class Event(AbstractTimestampedModel):
             return False
 
         if self.season is not None:
-            if not self.season.user_is_member(user):
+            if not self.season.is_user_member(user):
                 self.season.create_user_membership(user)
 
         # If user RSVP'd
@@ -189,10 +197,10 @@ class Event(AbstractTimestampedModel):
         p.save()
         return p
 
-    def user_is_rsvped(self, user: User) -> bool:
+    def is_user_rsvped(self, user: User) -> bool:
         return EventRSVP.objects.filter(user=user, event=self).exists()
 
-    def user_is_participant(self, user: User) -> bool:
+    def is_user_participant(self, user: User) -> bool:
         return Participant.objects.filter(user=user, event=self).exists()
 
     def get_total_participants(self) -> int:

@@ -1,0 +1,16 @@
+<label for="order">Order By:</label>
+<select class="filter"
+        id="order-filter"
+        name="s"
+        data-default="{{ default }}"
+        hx-trigger="change"
+        hx-get="{{ update_url }}"
+        hx-target="{{ update_element }}"
+        hx-include=".filter,#current-page"
+        hx-on::after-request="updateHistory()">
+<option value="relevance"
+        {% if current == "relevance" %}selected{% endif %}>Relevance</option>
+<option value="popular"
+        {% if current == "popular" %}selected{% endif %}>Popular</option>
+<option value="date" {% if current == "date" %}selected{% endif %}>Date</option>
+</select>

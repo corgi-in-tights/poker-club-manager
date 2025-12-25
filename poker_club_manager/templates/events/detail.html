@@ -6,11 +6,20 @@
     <p>{{ event.start_date|date:"F j, Y" }}</p>
     <p>Created at: {{ event.created_at|date:"F j, Y, g:i a" }}</p>
     <p>Last updated: {{ event.updated_at|date:"F j, Y, g:i a" }}</p>
-    {% if request.user.is_authenticated and event.is_rsvp_open %}
-      {% include "events/partials/buttons/rsvp.html" with event=event %}
-    {% endif %}
+    <p>{{ event.description }}</p>
     {% if event.is_active %}
-      {% include "events/partials/buttons/check_in.html" with event=event %}
+      <span>Ongoing</span>
+      {% if event.is_checked_in %}
+        <a class="btn btn-warning" disabled>Checked In</a>
+      {% else %}
+        <a class="btn btn-warning" href="{% url 'events:check_in' event.id %}">Check In</a>
+      {% endif %}
+    {% elif event.is_rsvp_open %}
+      {% include "events/partials/rsvp_button.html" with event=event rsvped=event.is_rsvped %}
+    {% elif event.is_finished %}
+      <span>Finished</span>
+    {% else %}
+      <span>RSVP opens on {{ event.rsvp_start_date|date:"F j, Y" }}</span>
     {% endif %}
   </div>
 {% endblock content %}

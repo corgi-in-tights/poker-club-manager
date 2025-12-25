@@ -1,0 +1,16 @@
+.card-img-wrapper {
+    aspect-ratio: 16/9;
+    background: #eee;
+    overflow: hidden;
+}
+
+.card-img-cover {
+    height: 100%;
+    object-fit: cover;
+}
+
+.page-text {
+    color: black;
+    font-size: 0.875rem;
+    font-weight: 500;
+}

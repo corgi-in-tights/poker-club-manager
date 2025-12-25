@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% load static partials %}
+
+{% block compressed_js %}
+  {{ block.super }}
+  <script defer src="{% static 'js/libs/filter_aware_url.js' %}"></script>
+{% endblock compressed_js %}
+{% block content %}
+  {% block season_header %}
+    <h2>Leaderboard for Season: {{ season.name }}</h2>
+    <a href="{% url 'points:archive' %}">View Other Seasons</a>
+  {% endblock season_header %}
+  <!-- ## Filter Bar ## -->
+  {% url 'points:leaderboard' as update_url %}
+  {% include "common/partials/paged_filters/items_per_page.html" with update_url=update_url update_element="#member-list" default=default_filters.members_per_page current=filters.members_per_page %}
+  {% include "common/partials/paged_filters/search.html" with update_url=update_url update_element="#member-list" default=default_filters.search_query current=filters.search_query %}
+  <!-- ## Event List ## -->
+  <div id="member-list-wrapper" hx-on::after-request="updateHistory()">
+    <div id="member-list">
+      {% partialdef member_list inline %}
+      {% url 'points:leaderboard' as update_url %}
+      <nav class="d-flex align-items-center my-3">
+        {% with prev=page|add:"-1" next=page|add:"1" %}
+          <div>
+            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=prev update_url=update_url update_element="#member-list" button_text="Previous" %}
+          </div>
+          <div class="flex-fill text-center">
+            <input id="current-page" type="hidden" name="p" value="{{ page }}" />
+            <span class="page-text badge badge-light border px-3 py-2">Page&nbsp;{{ page }} / {{ max_page }}</span>
+          </div>
+          <div>
+            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=next update_url=update_url update_element="#member-list" button_text="Next" %}
+          </div>
+        {% endwith %}
+      </nav>
+      <table class="leaderboard">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Name</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for member in members %}
+            <tr>
+              <td>{{ forloop.counter }}</td>
+              <td>{{ member.user.name }}</td>
+              <td>{{ member.points }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endpartialdef member_list %}
+  </div>
+</div>
+{% endblock content %}

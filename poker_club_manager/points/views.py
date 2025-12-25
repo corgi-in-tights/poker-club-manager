@@ -4,97 +4,76 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
 
-from poker_club_manager.common.models import Season, SeasonMembership
+from poker_club_manager.common.models import Season
 from poker_club_manager.common.utils.params import parse_int
 
-LEADERBOARD_DEFAULT_FILTERS = SimpleNamespace(
-    {
-        "members_per_page": 10,
-    },
-)
+from .filters import SeasonMemberListFilter
 
 
-def active_leaderboard(request: HttpRequest):
-    season = Season.get_active_season()
-    if not season:
-        return render(
-            request,
-            "points/out_of_season.html",
-        )
+def leaderboard(request: HttpRequest, season_id: int | None = None):
+    if season_id is not None:
+        season = get_object_or_404(Season, id=season_id)
+    else:
+        season = Season.get_active_season()
+        if not season:
+            return render(
+                request,
+                "points/out_of_season.html",
+            )
 
-    context = _build_leaderboard_context(
-        request,
-        season,
+    default_filters = SimpleNamespace(
+        {
+            "order": "points",
+            "members_per_page": 50,
+            "search_query": "",
+        },
     )
-
-    if request.headers.get("HX-Request") == "true":
-        return render(
-            request,
-            "points/partials/leaderboard_table.html",
-            context=context,
-        )
-
-    return render(
-        request,
-        "points/active_leaderboard.html",
-        context,
-    )
-
-
-def archived_leaderboard(request: HttpRequest, season_id: int):
-    season = get_object_or_404(Season, id=season_id, is_active=False)
-    context = _build_leaderboard_context(
-        request,
-        season,
-    )
-
-    if request.headers.get("HX-Request") == "true":
-        return render(
-            request,
-            "points/partials/leaderboard_table.html",
-            context=context,
-        )
-
-    return render(
-        request,
-        "points/archived_leaderboard.html",
-        context,
-    )
-
-
-def _build_leaderboard_context(request: HttpRequest, season: Season):
-    members = SeasonMembership.objects.filter(season=season).ordered_by_points()
 
     search_query = request.GET.get("q", "").strip()
-    if search_query:
-        members = members.with_name_containing(search_query)
+    order = request.GET.get("s", default_filters.order)
+
+    members = SeasonMemberListFilter(
+        search_query=search_query,
+        order=order,
+    ).apply(season)
 
     members_per_page = parse_int(
         request.GET.get("v"),
-        default=LEADERBOARD_DEFAULT_FILTERS.members_per_page,
-        min_value=10,
-        max_value=100,
+        default=default_filters.members_per_page,
+        min_value=5,
+        max_value=50,
     )
+
     paginator = Paginator(members, members_per_page)
-    page_number = parse_int(
+
+    page = parse_int(
         request.GET.get("p"),
         default=1,
         min_value=1,
         max_value=paginator.num_pages,
     )
+    page_members = paginator.get_page(page)
 
-    return {
-        "filters": SimpleNamespace(
-            {
-                "members_per_page": members_per_page,
-            },
-        ),
-        "default_filters": LEADERBOARD_DEFAULT_FILTERS,
-        "season": season,
-        "members": paginator.page(page_number),
-        "page": page_number,
-        "max_page": paginator.num_pages,
-    }
+    context = {"members": page_members, "page": page, "max_page": paginator.num_pages}
+
+    if request.headers.get("HX-Request") == "true":
+        return render(request, "points/leaderboard.html#member_list", context=context)
+
+    return render(
+        request,
+        "points/leaderboard.html",
+        context={
+            **context,
+            "filters": SimpleNamespace(
+                {
+                    "order": order,
+                    "members_per_page": members_per_page,
+                    "search_query": search_query,
+                },
+            ),
+            "default_filters": default_filters,
+        },
+    )
 
 
 def archive(request: HttpRequest):

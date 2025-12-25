@@ -31,7 +31,7 @@ class Season(AbstractTimestampedModel):
     def __str__(self):
         return f"Season {self.id} | {self.name}"
 
-    def user_is_member(self, user: User) -> bool:
+    def is_user_member(self, user: User) -> bool:
         return SeasonMembership.objects.filter(user=user, season=self).exists()
 
     def get_membership_for_user(self, user: User):
@@ -51,6 +51,12 @@ class Season(AbstractTimestampedModel):
 
 
 class SeasonMembershipQuerySet(models.QuerySet):
+    def search(self, query: str):
+        return self.filter(
+            models.Q(user__username__icontains=query)
+            | models.Q(user__name__icontains=query),
+        )
+
     def with_minimum_points(self, min_points: int):
         return self.filter(points__gte=min_points)
 

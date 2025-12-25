@@ -1,0 +1,15 @@
+<label for="per-page-filter">Items Per Page</label>
+<select name="v"
+        id="per-page-filter"
+        class="filter"
+        data-default="{{ default }}"
+        hx-trigger="change"
+        hx-get="{{ update_url }}"
+        hx-target="{{ update_element }}"
+        hx-include=".filter,#current-page"
+        hx-on::after-request="updateHistory()">
+<option value="5" {% if current == 5 %}selected{% endif %}>5</option>
+<option value="10" {% if current == 10 %}selected{% endif %}>10</option>
+<option value="25" {% if current == 25 %}selected{% endif %}>25</option>
+<option value="50" {% if current == 50 %}selected{% endif %}>50</option>
+</select>

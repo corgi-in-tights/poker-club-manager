@@ -1,5 +1,10 @@
 {% extends "base.html" %}
+{% load static %}
 
+{% block compressed_js %}
+  {{ block.super }}
+  <script defer src="{% static 'js/events/manage.js' %}"></script>
+{% endblock compressed_js %}
 {% block content %}
   <a href="{% url 'events:list' %}">Go Back</a>
   <h1>Managing Event {{ event.title }}</h1>
@@ -23,13 +28,17 @@
         </tr>
       {% endfor %}
     </table>
-    <form>
+    <form id="add-participant-form">
       <input type="text"
-             name="participant_identifier"
-             placeholder="Username or Email"
-             required />
-      <button name="action">Add participant</button>
+         name="participant_identifier"
+         placeholder="Email"
+         id="search-input"
+         class="search-input"
+         data-url="{% url 'api:user-fetch-matching-names' %}"
+      />
+      <button type="submit" name="action">Add participant</button>
     </form>
+    <p id="search-results"></p>
   </div>
   <div>
     <h3>Guests</h3>

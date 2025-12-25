@@ -1,11 +1,17 @@
 {% extends "base.html" %}
 
-{% load static %}
+{% load static partials %}
 
+{% block title %}
+  Browse Events
+{% endblock title %}
+{% block compressed_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/events/base.css' %}" />
+{% endblock compressed_css %}
 {% block compressed_js %}
   {{ block.super }}
-  <script defer src="{% static 'js/filtered_list.js' %}"></script>
-  <script defer src="{% static 'js/events/list.js' %}"></script>
+  <script defer src="{% static 'js/libs/filter_aware_url.js' %}"></script>
 {% endblock compressed_js %}
 {% block content %}
   <h1>Browse Events</h1>
@@ -13,33 +19,76 @@
     <a href="{% url 'events:create' %}">+ Create New Event</a>
     <br />
   {% endif %}
-  <!-- Filter Bar -->
-  <label for="events_per_page">Events per Page</label>
-  <select class="filter"
-          id="filter-events_per_page"
-          name="v"
-          data-default="{{ default_filters.events_per_page }}">
-    <option value="5" {% if filters.events_per_page == 5 %}selected{% endif %}>5</option>
-    <option value="10" {% if filters.events_per_page == 10 %}selected{% endif %}>10</option>
-    <option value="25" {% if filters.events_per_page == 25 %}selected{% endif %}>25</option>
-    <option value="50" {% if filters.events_per_page == 50 %}selected{% endif %}>50</option>
-  </select>
-  <label for="order">Order By:</label>
-  <select class="filter"
-          id="filter-order"
-          name="s"
-          data-default="{{ default_filters.order }}">
-    <option value="relevance"
-            {% if filters.order == "relevance" %}selected{% endif %}>Relevance</option>
-    <option value="popular"
-            {% if filters.order == "popular" %}selected{% endif %}>Popular</option>
-    <option value="date" {% if filters.order == "date" %}selected{% endif %}>Date</option>
-  </select>
-  <input type="text"
-         id="event-search"
-         name="q"
-         placeholder="Search events..."
-         value="{{ search_query }}" />
-  <!-- Event List -->
-  <div id="event-list">{% include "events/partials/event_list.html" with events=events %}</div>
+  <!-- ## Filter Bar ## -->
+  {% url 'events:list' as update_url %}
+  {% include "common/partials/paged_filters/items_per_page.html" with update_url=update_url update_element="#event-list" default=default_filters.events_per_page current=filters.events_per_page %}
+  {% include "common/partials/paged_filters/order_by.html" with update_url=update_url update_element="#event-list" default=default_filters.order current=filters.order %}
+  {% include "common/partials/paged_filters/search.html" with update_url=update_url update_element="#event-list" default=default_filters.search_query current=filters.search_query %}
+  <!-- ## Event List ## -->
+  <div id="event-list-wrapper" hx-on::after-request="updateHistory()">
+    <div id="event-list">
+      {% partialdef event-cards inline %}
+      {% url 'events:list' as update_url %}
+      <nav class="d-flex align-items-center my-3">
+        {% with prev=page|add:"-1" next=page|add:"1" %}
+          <div>
+            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=prev update_url=update_url update_element="#event-list" button_text="Previous" %}
+          </div>
+          <div class="flex-fill text-center">
+            <input id="current-page" type="hidden" name="p" value="{{ page }}" />
+            <span class="page-text badge badge-light border px-3 py-2">Page&nbsp;{{ page }} / {{ max_page }}</span>
+          </div>
+          <div>
+            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=next update_url=update_url update_element="#event-list" button_text="Next" %}
+          </div>
+        {% endwith %}
+      </nav>
+      <div class="row g-4">
+        {% for event in events %}
+          <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">
+            <div class="event card w-100">
+              <div class="card-img-wrapper">
+                <img class="card-img-top card-img-cover" alt="Card image cap" />
+              </div>
+              <div class="card-body">
+                <h5 class="card-title">{{ event.title }}</h5>
+                {% if event.description %}<p class="card-text">{{ event.description|truncatewords:50 }}</p>{% endif %}
+                <p class="mb-1">
+                  <small>Starts {{ event.start_date|date:"ha, F j, Y" }}</small>
+                </p>
+                <p class="mb-3">
+                  <small>Ends {{ event.end_date|date:"F j, Y - h:i a" }}</small>
+                </p>
+                <div class="mt-auto">
+                  {% if event.is_active %}
+                    <span>Ongoing</span>
+                    {% if event.is_checked_in %}
+                      <a>Checked In</a>
+                    {% else %}
+                      <a class="btn btn-warning" href="{% url 'events:check_in' event.id %}">Check In</a>
+                    {% endif %}
+                  {% elif event.is_rsvp_open %}
+                    {% include "events/partials/rsvp_button.html" with event=event rsvped=event.is_rsvped %}
+                  {% elif event.is_finished %}
+                    <span>Finished</span>
+                  {% else %}
+                    <span>RSVP opens on {{ event.rsvp_start_date|date:"F j, Y" }}</span>
+                  {% endif %}
+                  <div class="mt-2">
+                    <a href="{% url 'events:detail' event.id %}" class="btn btn-sm btn-link">View Details</a>
+                    <button data-url="{% url 'events:detail' event.id %}"
+                            class="btn btn-sm btn-outline-secondary"
+                            onclick="copyUrl(this)">Copy URL</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        {% empty %}
+          <p>No events available.</p>
+        {% endfor %}
+      </div>
+    {% endpartialdef %}
+  </div>
+</div>
 {% endblock content %}
