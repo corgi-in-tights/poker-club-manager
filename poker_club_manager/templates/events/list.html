@@ -29,20 +29,8 @@
     <div id="event-list">
       {% partialdef event-cards inline %}
       {% url 'events:list' as update_url %}
-      <nav class="d-flex align-items-center my-3">
-        {% with prev=page|add:"-1" next=page|add:"1" %}
-          <div>
-            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=prev update_url=update_url update_element="#event-list" button_text="Previous" %}
-          </div>
-          <div class="flex-fill text-center">
-            <input id="current-page" type="hidden" name="p" value="{{ page }}" />
-            <span class="page-text badge badge-light border px-3 py-2">Page&nbsp;{{ page }} / {{ max_page }}</span>
-          </div>
-          <div>
-            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=next update_url=update_url update_element="#event-list" button_text="Next" %}
-          </div>
-        {% endwith %}
-      </nav>
+      {% include "common/partials/page_nav.html" with page=page max_page=max_page update_url=update_url update_element="#event-list" %}
+
       <div class="row g-4">
         {% for event in events %}
           <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">

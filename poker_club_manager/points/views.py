@@ -34,7 +34,6 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
 
     members = SeasonMemberListFilter(
         search_query=search_query,
-        order=order,
     ).apply(season)
 
     members_per_page = parse_int(
@@ -54,7 +53,12 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
     )
     page_members = paginator.get_page(page)
 
-    context = {"members": page_members, "page": page, "max_page": paginator.num_pages}
+    context = {
+        "members": page_members,
+        "season": season,
+        "page": page,
+        "max_page": paginator.num_pages,
+    }
 
     if request.headers.get("HX-Request") == "true":
         return render(request, "points/leaderboard.html#member_list", context=context)

@@ -1,5 +1,53 @@
 {% extends "base.html" %}
 
+{% load static partials %}
+
+{% block compressed_js %}
+  {{ block.super }}
+  <script defer src="{% static 'js/timers/detail.js' %}"></script>
+{% endblock compressed_js %}
 {% block content %}
-  timer detail
+  <h3>{{ timer.name }} Details</h3>
+  <input type="hidden" id="timer-stream-url" value="{% url 'timers:stream' timer.id %}" />
+  
+  <p>Level: <span id="level">{{ timer.current_level_index }}</span></p>
+  <p>Level Started At: <span id="level_started_at">{{ timer.level_started_at|date:"Y-m-d H:i:s" }}</span></p>
+  <p>Is Paused: <span id="paused">{{ timer.is_paused }}</span></p>
+
+  {% partialdef manage-timer inline %}
+  {% if perms.events.manage_event %}
+    <h3>Manage Timer</h3>
+
+    <input type="hidden" id="timer-id" value="{{ timer.id }}" />
+
+    <div id="timer-controls-wrapper">
+      <div id="timer-controls">
+        {% partialdef timer_controls inline %}
+        <button hx-post="{% url 'timers:control' timer.id %}"
+                hx-target="#timer-controls"
+                hx-swap="innerHTML"
+                hx-vals='{"action": "decrement_level"}'
+                {% if not timer.can_decrement_level %}disabled{% endif %}>Previous Level</button>
+        {% if timer.is_paused %}
+          <button hx-post="{% url 'timers:control' timer.id %}"
+                  hx-target="#timer-controls"
+                  hx-swap="innerHTML"
+                  hx-vals='{"action": "resume"}'>Resume</button>
+        {% else %}
+          <button hx-post="{% url 'timers:control' timer.id %}"
+                  hx-target="#timer-controls"
+                  hx-swap="innerHTML"
+                  hx-vals='{"action": "pause"}'>Pause</button>
+        {% endif %}
+        <button hx-post="{% url 'timers:control' timer.id %}"
+                hx-target="#timer-controls"
+                hx-swap="innerHTML"
+                hx-vals='{"action": "increment_level"}'
+                {% if not timer.can_increment_level %}disabled{% endif %}>Next Level</button>
+      {% endpartialdef %}
+    </div>
+  </div>
+{% endif %}
+{% endpartialdef %}
 {% endblock content %}
+

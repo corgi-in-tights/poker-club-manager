@@ -2,4 +2,29 @@
 
 {% block content %}
   <h1>Active Timers</h1>
+  {% if perms.events.manage_event %}
+    <a href="{% url 'timers:create' %}">+ Create New Timer</a>
+    <br />
+  {% endif %}
+
+  {% for timer in timers %}
+    <div class="card mb-3">
+      <div class="card-body">
+        <h5 class="card-title">
+          <a href="{% url 'timers:detail' timer.id %}">Timer #{{ timer.id }}</a>
+        </h5>
+        <p class="card-text">
+          Status: 
+          {% if timer.is_finished %}
+            Finished
+          {% elif timer.is_paused %}
+            Paused
+          {% else %}
+            Running
+          {% endif %}
+        </p>
+      </div>
+    </div>
+
+  {% endfor %}
 {% endblock content %}

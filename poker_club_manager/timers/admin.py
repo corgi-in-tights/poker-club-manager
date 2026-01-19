@@ -1,7 +1,8 @@
 from django.contrib import admin
 
-from .models import BlindsLevel, BlindsTemplate, BlindsTimer
+from .models import BlindsSchedule, BlindsScheduleLevel, BlindsTimer, BlindsTimerLevel
 
-admin.site.register(BlindsTemplate)
-admin.site.register(BlindsLevel)
+admin.site.register(BlindsSchedule)
+admin.site.register(BlindsScheduleLevel)
 admin.site.register(BlindsTimer)
+admin.site.register(BlindsTimerLevel)

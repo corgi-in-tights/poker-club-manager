@@ -4,7 +4,7 @@
   Archived Seasons
   {% for season in seasons %}
     <h3>
-      <a href="{% url 'points:archived_leaderboard' season.id %}">{{ season.name }}</a>
+      <a href="{% url 'points:archived-leaderboard' season.id %}">{{ season.name }}</a>
     </h3>
   {% empty %}
     <p>No archived seasons available.</p>

@@ -2,6 +2,10 @@
 
 {% load static partials %}
 
+{% block compressed_css %}
+  {{ block.super }}
+  <link rel="stylesheet" href="{% static 'css/points/leaderboard.css' %}" />
+{% endblock compressed_css %}
 {% block compressed_js %}
   {{ block.super }}
   <script defer src="{% static 'js/libs/filter_aware_url.js' %}"></script>
@@ -9,7 +13,7 @@
 {% block content %}
   {% block season_header %}
     <h2>Leaderboard for Season: {{ season.name }}</h2>
-    <a href="{% url 'points:archive' %}">View Other Seasons</a>
+    <a href="{% url 'points:archive' %}">View Archived Seasons</a>
   {% endblock season_header %}
   <!-- ## Filter Bar ## -->
   {% url 'points:leaderboard' as update_url %}
@@ -20,20 +24,8 @@
     <div id="member-list">
       {% partialdef member_list inline %}
       {% url 'points:leaderboard' as update_url %}
-      <nav class="d-flex align-items-center my-3">
-        {% with prev=page|add:"-1" next=page|add:"1" %}
-          <div>
-            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=prev update_url=update_url update_element="#member-list" button_text="Previous" %}
-          </div>
-          <div class="flex-fill text-center">
-            <input id="current-page" type="hidden" name="p" value="{{ page }}" />
-            <span class="page-text badge badge-light border px-3 py-2">Page&nbsp;{{ page }} / {{ max_page }}</span>
-          </div>
-          <div>
-            {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=next update_url=update_url update_element="#member-list" button_text="Next" %}
-          </div>
-        {% endwith %}
-      </nav>
+      {% include "common/partials/page_nav.html" with page=page max_page=max_page update_url=update_url update_element="#member-list" %}
+
       <table class="leaderboard">
         <thead>
           <tr>
@@ -45,7 +37,7 @@
         <tbody>
           {% for member in members %}
             <tr>
-              <td>{{ forloop.counter }}</td>
+              <td>{{ member.rank }}</td>
               <td>{{ member.user.name }}</td>
               <td>{{ member.points }}</td>
             </tr>

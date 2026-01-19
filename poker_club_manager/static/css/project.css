@@ -15,3 +15,9 @@
 html {
     overflow-y: scroll;
 }
+
+.page-text {
+    color: black;
+    font-size: 0.875rem;
+    font-weight: 500;
+}

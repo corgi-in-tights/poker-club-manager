@@ -11,7 +11,6 @@ class SeasonMemberListFilter:
     """
 
     search_query: str | None = None
-    order: str = "points"
 
     def apply(self, season: Season):
         """
@@ -28,4 +27,4 @@ class SeasonMemberListFilter:
         return self._apply_order(qs)
 
     def _apply_order(self, qs):
-        return qs.order_by("-points")
+        return qs.order_and_annotate_rank()

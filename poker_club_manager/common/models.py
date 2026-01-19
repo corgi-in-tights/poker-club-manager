@@ -1,5 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.db.models import F, Window
+from django.db.models.functions import Rank
 from django.utils.translation import gettext_lazy as _
 
 User = get_user_model()
@@ -29,7 +31,7 @@ class Season(AbstractTimestampedModel):
         ]
 
     def __str__(self):
-        return f"Season {self.id} | {self.name}"
+        return f"Season {self.name}"
 
     def is_user_member(self, user: User) -> bool:
         return SeasonMembership.objects.filter(user=user, season=self).exists()
@@ -66,6 +68,13 @@ class SeasonMembershipQuerySet(models.QuerySet):
     def with_name_containing(self, substring: str):
         return self.filter(user__username__icontains=substring)
 
+    def order_and_annotate_rank(self):
+        return self.annotate(
+            rank=Window(
+                expression=Rank(),
+                order_by=[F("points").desc(), F("user__username").asc()],
+            ),
+        )
 
 class SeasonMembership(AbstractTimestampedModel):
     user = models.ForeignKey(
