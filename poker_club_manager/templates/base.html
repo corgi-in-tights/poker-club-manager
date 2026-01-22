@@ -28,11 +28,11 @@
               crossorigin="anonymous"></script>
       <!-- Your stuff: Third-party CSS libraries go here -->
       <!-- This file stores project-specific CSS -->
-      {% compress css %}
+      <!-- {% compress css %}  BECAUSE CACHING IS A BITCH  -->
       {% block compressed_css %}
         <link href="{% static 'css/project.css' %}" rel="stylesheet" />
       {% endblock compressed_css %}
-      {% endcompress %}
+      <!-- {% endcompress %} -->
     {% endblock css %}
     <!-- Le javascript
     ================================================== -->
@@ -47,11 +47,11 @@
       <script src="{% static 'js/libs/htmx.min.js' %}"></script>
       <!-- Your stuff: Third-party javascript libraries go here -->
       <!-- place project specific Javascript in this file -->
-      {% compress js %}
+      <!-- {% compress js %}  BECAUSE CACHING IS A BITCH  -->
         {% block compressed_js %}
           <script defer src="{% static 'js/project.js' %}"></script>
         {% endblock compressed_js %}
-      {% endcompress %}
+      <!-- {% endcompress %} -->
     {% endblock javascript %}
   </head>
   <body class="{% block bodyclass %}{% endblock bodyclass %}" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
