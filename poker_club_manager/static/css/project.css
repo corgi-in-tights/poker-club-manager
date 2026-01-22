@@ -1,23 +1,168 @@
 /* These styles are generated from project.scss. */
+/* Poker Club theme variables */
+:root {
+  --poker-felt: #22513a;
+  --poker-felt-soft: #294d3d;
+  --poker-table-shadow: #23282e;
+  --poker-gold: #bfa664;
+  --poker-gold-soft: #cab98e;
+  --poker-bright-gold: #e4d39f;
+  --poker-gray: #23272a;
+  --poker-gray-light: #363a3f;
+  --poker-white: #f5f7fa;
+  --poker-alert-bg: #34453b;
+  --poker-alert-error-bg: #452a2a;
+  --poker-link: #d6c47e;
+}
 
+/* Body background: deep felt-green */
+body {
+  background: var(--poker-felt);
+  color: var(--poker-white);
+  min-height: 100vh;
+}
+
+/* Subtle felt/charcoal navbar with hint of gold border */
+.navbar {
+  background: linear-gradient(180deg, var(--poker-gray) 80%, var(--poker-felt) 100%);
+  border-bottom: 2px solid var(--poker-gold-soft);
+  color: var(--poker-white);
+  box-shadow: 0 2px 8px rgba(35, 40, 46, 0.04);
+}
+
+/* Navbar brand and nav links */
+.navbar .navbar-brand, .navbar .nav-link {
+  color: var(--poker-white) !important;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: color 0.18s;
+}
+.navbar .navbar-brand:hover, .navbar .nav-link:hover {
+  color: var(--poker-gold) !important;
+}
+
+/* Buttons: restrained, clear, solid-feel */
+.btn-primary {
+  background: var(--poker-gold);
+  color: var(--poker-gray);
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(50, 60, 40, 0.06);
+  transition: background 0.15s;
+}
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--poker-gold-soft);
+  color: var(--poker-gray);
+}
+
+.btn-secondary {
+  background: var(--poker-gray-light);
+  color: var(--poker-white);
+  border: none;
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(35, 40, 46, 0.06);
+  transition: background 0.15s, color 0.15s;
+}
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background: var(--poker-felt-soft);
+  color: var(--poker-gold);
+}
+
+/* Alerts: poker felt and gold, readable */
+.alert {
+  border-radius: .5rem;
+  border-width: 1.5px;
+  font-weight: 500;
+  background: var(--poker-alert-bg);
+  color: var(--poker-white);
+  border-color: var(--poker-gold-soft);
+  box-shadow: 0 2px 10px rgba(35, 41, 43, .06);
+}
+.alert-success,
+.alert-info,
 .alert-debug {
-  color: black;
-  background-color: white;
-  border-color: #d6e9c6;
+  background: var(--poker-alert-bg);
+  color: var(--poker-gold-soft);
+  border-color: var(--poker-gold-soft);
+}
+.alert-danger,
+.alert-error,
+.alert-warning {
+  background: var(--poker-alert-error-bg);
+  color: var(--poker-bright-gold);
+  border-color: var(--poker-gold);
 }
 
-.alert-error {
-  color: #b94a48;
-  background-color: #f2dede;
-  border-color: #eed3d7;
+/* Table: clean, felt header, soft gold header line */
+.table {
+  background: var(--poker-gray);
+  color: var(--poker-white);
+  border-radius: 0.6rem;
+  overflow: hidden;
+}
+.table th {
+  background: var(--poker-felt-soft);
+  color: var(--poker-gold-soft);
+  border-bottom: 2px solid var(--poker-gold-soft);
+  font-weight: 600;
+}
+.table td {
+  background: var(--poker-gray-light);
+  border-color: #384744;
+}
+.table-striped > tbody > tr:nth-of-type(odd) > * {
+  background: #2c4234;
 }
 
+/* Table hover */
+.table-hover > tbody > tr:hover > * {
+  background: #294d3d !important;
+  color: var(--poker-gold);
+}
+
+/* Links: subtle gold accent */
+a,
+a:visited {
+  color: var(--poker-link);
+  text-decoration: underline dotted 1.5px var(--poker-link);
+  transition: color 0.16s;
+}
+a:hover,
+a:focus {
+  color: var(--poker-gold);
+  text-decoration: underline;
+}
+
+/* Scrollbar: optional refinement (Webkit only, harmonious with theme) */
 html {
-    overflow-y: scroll;
+  overflow-y: scroll;
+}
+body::-webkit-scrollbar {
+  width: 13px;
+  background: var(--poker-gray);
+}
+body::-webkit-scrollbar-thumb {
+  background: var(--poker-felt-soft);
+  border-radius: 6px;
 }
 
-.page-text {
-    color: black;
-    font-size: 0.875rem;
-    font-weight: 500;
+/* Misc: card refinement for elevated appearance */
+.card {
+  background: var(--poker-gray-light);
+  border-radius: 0.65rem;
+  border: 1.5px solid var(--poker-felt-soft);
+  box-shadow: 0 3px 18px rgba(45, 56, 50, 0.10);
+}
+
+/* Responsive adjustment for high readability */
+@media (max-width: 575.98px) {
+  body {
+    font-size: 0.96em;
+  }
+  .container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
 }
