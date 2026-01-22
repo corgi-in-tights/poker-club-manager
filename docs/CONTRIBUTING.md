@@ -6,8 +6,8 @@
 3. Build the docker images using `just build`
 4. Start everything using `just up`
 5. Attach logs `just logs`, make sure it says "server is up at ", might take a minute
-6. Then, in a seperate or the current terminal window, run `just migrate` to create the DB tables and everything
-7. `just seed` to initialize all the sample data
+6. Then, in a seperate or the current terminal window, run `just manage migrate` to create the DB tables and everything
+7. `just manage seed` to initialize all the sample data
 8. Create a superuser using `just manage createsuperuser`
 9. Should be running at https://localhost:8000
 

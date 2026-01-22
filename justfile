@@ -41,7 +41,3 @@ logs *args:
 # manage: Executes `manage.py` command.
 manage +args:
     @docker compose run --rm django python ./manage.py {{args}}
-
-# seed: Seed database with test data
-seed:
-    @docker compose run --rm django python ./manage.py seed
