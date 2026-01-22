@@ -17,6 +17,7 @@ class BlindsTimerSerializer(ModelSerializer):
             "is_finished",
         ]
 
+
 class BlindsTimerPollSerializer(ModelSerializer):
     class Meta:
         model = BlindsTimer

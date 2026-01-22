@@ -48,13 +48,14 @@
       <!-- Your stuff: Third-party javascript libraries go here -->
       <!-- place project specific Javascript in this file -->
       <!-- {% compress js %}  BECAUSE CACHING IS A BITCH  -->
-        {% block compressed_js %}
-          <script defer src="{% static 'js/project.js' %}"></script>
-        {% endblock compressed_js %}
+      {% block compressed_js %}
+        <script defer src="{% static 'js/project.js' %}"></script>
+      {% endblock compressed_js %}
       <!-- {% endcompress %} -->
     {% endblock javascript %}
   </head>
-  <body class="{% block bodyclass %}{% endblock bodyclass %}" hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
+  <body class="{% block bodyclass %}{% endblock bodyclass %}"
+        hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {% block body %}
       <div class="mb-1">
         <nav class="navbar navbar-expand-md navbar-light bg-light">

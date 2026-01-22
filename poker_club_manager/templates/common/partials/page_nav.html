@@ -1,14 +1,14 @@
 <nav class="d-flex align-items-center my-3">
-{% with prev=page|add:"-1" next=page|add:"1" %}
+  {% with prev=page|add:"-1" next=page|add:"1" %}
     <div>
-    {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=prev update_url=update_url update_element=update_element button_text="Previous" %}
+      {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=prev update_url=update_url update_element=update_element button_text="Previous" %}
     </div>
     <div class="flex-fill text-center">
-    <input id="current-page" type="hidden" name="p" value="{{ page }}" />
-    <span class="page-text badge badge-light border px-3 py-2">Page&nbsp;{{ page }} / {{ max_page }}</span>
+      <input id="current-page" type="hidden" name="p" value="{{ page }}" />
+      <span class="page-text badge badge-light border px-3 py-2">Page&nbsp;{{ page }} / {{ max_page }}</span>
     </div>
     <div>
-    {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=next update_url=update_url update_element=update_element button_text="Next" %}
+      {% include "common/partials/buttons/page.html" with page=page max_page=max_page new_page=next update_url=update_url update_element=update_element button_text="Next" %}
     </div>
-{% endwith %}
+  {% endwith %}
 </nav>

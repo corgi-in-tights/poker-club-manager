@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+
 {% load static %}
 
 {% block compressed_js %}
@@ -30,12 +31,11 @@
     </table>
     <form id="add-participant-form">
       <input type="text"
-         name="participant_identifier"
-         placeholder="Email"
-         id="search-input"
-         class="search-input"
-         data-url="{% url 'api:user-fetch-matching-names' %}"
-      />
+             name="participant_identifier"
+             placeholder="Email"
+             id="search-input"
+             class="search-input"
+             data-url="{% url 'api:user-fetch-matching-names' %}" />
       <button type="submit" name="action">Add participant</button>
     </form>
     <p id="search-results"></p>

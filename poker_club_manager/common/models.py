@@ -76,6 +76,7 @@ class SeasonMembershipQuerySet(models.QuerySet):
             ),
         )
 
+
 class SeasonMembership(AbstractTimestampedModel):
     user = models.ForeignKey(
         User,

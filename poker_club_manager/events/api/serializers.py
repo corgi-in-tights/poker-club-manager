@@ -14,10 +14,9 @@ class EventRSVPSerializer(serializers.ModelSerializer):
             "id",
             "event",
             "user",
-            "guest_name",
-            "guest_email",
             "status",
             "updated_at",
+            "created_at",
         ]
         read_only_fields = ["event", "user"]
 

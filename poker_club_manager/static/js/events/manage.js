@@ -51,7 +51,7 @@ function addDeleteButtonListeners() {
 
 window.onload = function() {
     addDeleteButtonListeners();
-    
+
     const searchInput = document.getElementById("search-input");
     const dataURL = searchInput ? searchInput.getAttribute("data-url") : null;
 
@@ -70,7 +70,7 @@ window.onload = function() {
             data => {
                 const resultsContainer = document.getElementById("search-results");
                 resultsContainer.innerHTML = "";
-                
+
                 data.results.forEach(user => {
                     const btn = document.createElement("btn");
                     btn.innerHTML = `
@@ -110,5 +110,5 @@ window.onload = function() {
         });
     });
 
-    
+
 };

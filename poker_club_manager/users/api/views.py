@@ -32,11 +32,9 @@ class UserViewSet(RetrieveModelMixin, ListModelMixin, UpdateModelMixin, GenericV
                 data={"detail": "Query parameter 'query' is required."},
             )
 
-        users = (
-            User.objects
-            .only("id", "username", "name")
-            .filter_by_name(requested_query)[:3]
-        )
+        users = User.objects.only("id", "username", "name").filter_by_name(
+            requested_query,
+        )[:3]
         serializer = UserSerializer(users, many=True, context={"request": request})
 
         return Response(

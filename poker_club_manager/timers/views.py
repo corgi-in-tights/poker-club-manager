@@ -1,9 +1,7 @@
-import json
 import logging
-import time
 
 from django.core.exceptions import PermissionDenied
-from django.http import HttpRequest, StreamingHttpResponse
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
@@ -69,3 +67,7 @@ def timer_control(request: HttpRequest, timer_id: int):
             timer.resume()
 
     return render(request, "timers/detail.html#timer_controls", {"timer": timer})
+
+
+def stream(request: HttpRequest, timer_id: int):
+    assert NotImplementedError("Streaming not yet implemented")

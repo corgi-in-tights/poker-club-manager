@@ -8,9 +8,7 @@
         hx-target="{{ update_element }}"
         hx-include=".filter,#current-page"
         hx-on::after-request="updateHistory()">
-<option value="relevance"
-        {% if current == "relevance" %}selected{% endif %}>Relevance</option>
-<option value="popular"
-        {% if current == "popular" %}selected{% endif %}>Popular</option>
-<option value="date" {% if current == "date" %}selected{% endif %}>Date</option>
+  <option value="relevance" {% if current == "relevance" %}selected{% endif %}>Relevance</option>
+  <option value="popular" {% if current == "popular" %}selected{% endif %}>Popular</option>
+  <option value="date" {% if current == "date" %}selected{% endif %}>Date</option>
 </select>

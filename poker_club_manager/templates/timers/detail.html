@@ -8,18 +8,22 @@
 {% endblock compressed_js %}
 {% block content %}
   <h3>{{ timer.name }} Details</h3>
-  <input type="hidden" id="timer-stream-url" value="{% url 'timers:stream' timer.id %}" />
-  
-  <p>Level: <span id="level">{{ timer.current_level_index }}</span></p>
-  <p>Level Started At: <span id="level_started_at">{{ timer.level_started_at|date:"Y-m-d H:i:s" }}</span></p>
-  <p>Is Paused: <span id="paused">{{ timer.is_paused }}</span></p>
-
+  <input type="hidden"
+         id="timer-stream-url"
+         value="{% url 'timers:stream' timer.id %}" />
+  <p>
+    Level: <span id="level">{{ timer.current_level_index }}</span>
+  </p>
+  <p>
+    Level Started At: <span id="level_started_at">{{ timer.level_started_at|date:"Y-m-d H:i:s" }}</span>
+  </p>
+  <p>
+    Is Paused: <span id="paused">{{ timer.is_paused }}</span>
+  </p>
   {% partialdef manage-timer inline %}
   {% if perms.events.manage_event %}
     <h3>Manage Timer</h3>
-
     <input type="hidden" id="timer-id" value="{{ timer.id }}" />
-
     <div id="timer-controls-wrapper">
       <div id="timer-controls">
         {% partialdef timer_controls inline %}
@@ -50,4 +54,3 @@
 {% endif %}
 {% endpartialdef %}
 {% endblock content %}
-

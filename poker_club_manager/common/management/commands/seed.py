@@ -71,8 +71,7 @@ def create_random_users_memberships(models, count=20):
     memberships = []
 
     for _ in range(count):
-        u = models.User(username=fake.user_name(), email=fake.email(),
-                        name=fake.name())
+        u = models.User(username=fake.user_name(), email=fake.email(), name=fake.name())
         u.set_password("password123")
         users.append(u)
         m = models.SeasonMembership(
@@ -105,7 +104,8 @@ def create_events(models, count=15):
 
     for _ in range(count):
         start_date = fake.date_time_this_year(
-            after_now=True, tzinfo=timezone.get_default_timezone(),
+            after_now=True,
+            tzinfo=timezone.get_default_timezone(),
         )
         end_date = start_date + timedelta(hours=random.randint(2, 8))
         event = models.Event.objects.create(

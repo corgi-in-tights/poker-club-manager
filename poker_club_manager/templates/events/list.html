@@ -30,7 +30,6 @@
       {% partialdef event-cards inline %}
       {% url 'events:list' as update_url %}
       {% include "common/partials/page_nav.html" with page=page max_page=max_page update_url=update_url update_element="#event-list" %}
-
       <div class="row g-4">
         {% for event in events %}
           <div class="col-12 col-md-6 col-lg-4 d-flex align-items-stretch">

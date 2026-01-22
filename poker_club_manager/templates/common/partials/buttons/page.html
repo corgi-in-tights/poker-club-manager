@@ -3,4 +3,6 @@
         hx-target="{{ update_element }}"
         hx-vals='{"p": "{{ new_page }}"}'
         hx-include=".filter"
-        {% if new_page > max_page or new_page < 1 %}disabled aria-disabled="true" tabindex="-1"{% endif %}>{{ button_text }}</button>
+        {% if new_page > max_page or new_page < 1 %}disabled aria-disabled="true" tabindex="-1"{% endif %}>
+  {{ button_text }}
+</button>

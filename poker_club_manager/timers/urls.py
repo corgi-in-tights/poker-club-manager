@@ -7,7 +7,7 @@ urlpatterns = [
     path("", views.active_timers, name="active"),
     path("create/", views.create_timer, name="create"),
     path("<int:timer_id>/", views.detail_timer, name="detail"),
-    # path("<int:timer_id>/stream/", views.timer_stream, name="stream"),
+    path("<int:timer_id>/stream/", views.timer_stream, name="stream"),
 ]
 
 urlpatterns += [
