@@ -18,7 +18,7 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
         if not season:
             return render(
                 request,
-                "points/out_of_season.html",
+                "points/leaderboard.html",
             )
 
     default_filters = SimpleNamespace(
