@@ -28,66 +28,61 @@ class BlindsTimerForm(forms.ModelForm):
         self.levels_data = self._parse_levels()
         return cleaned
 
-    def _parse_play_levels(self, index, data):
-        try:
-            sb = int(data[f"levels-{index}-small"])
-        except (KeyError, ValueError):
-            msg = f"Invalid small blind in level {index}"
-            raise forms.ValidationError(msg) from None
-        if sb <= 0:
-            msg = f"Level {index} duration must be positive"
-            raise forms.ValidationError(msg)
+    def _parse_level(self, index, data, keys):
+        parsed_values = []
+        for key in keys:
+            try:
+                value = int(data.get(f"levels-{index}-{key}"))
+            except (ValueError):
+                msg = f"Invalid {key} in level {index}"
+                raise forms.ValidationError(msg) from None
+            if value <= 0:
+                msg = f"Level {index} {key} must be positive"
+                raise forms.ValidationError(msg)
+            parsed_values.append(value)
 
-        try:
-            bb = int(data[f"levels-{index}-big"])
-        except (KeyError, ValueError):
-            msg = f"Invalid big blind in level {index}"
-            raise forms.ValidationError(msg) from None
-        if bb <= 0:
-            msg = f"Level {index} duration must be positive"
-            raise forms.ValidationError(msg)
+        return tuple(parsed_values)
+
+    def _parse_play_level(self, index, data):
+        sb, bb, duration_minutes = self._parse_level(
+            index,
+            data,
+            ("small", "big", "duration"),
+        )
         if sb >= bb:
-            msg = f"Level {index}: small blind must be less than big blind"
+            msg = f"Level {index} small blind must be less than big blind"
             raise forms.ValidationError(msg)
-        return sb, bb
+        return {
+            "level_type": "play",
+            "small_blind": sb,
+            "big_blind": bb,
+            "duration_seconds": duration_minutes * 60,
+        }
+
+    def _parse_break_level(self, index, data):
+        results = self._parse_level(index, data, ("duration",))
+        return {
+            "level_type": "break",
+            "duration_seconds": results[0] * 60,
+        }
 
     def _parse_levels(self):
         levels = []
         index = 1
-        data = self.data
+        data = self.data.copy()
 
         while f"levels-{index}-type" in data:
-            level_type = data[f"levels-{index}-type"]
+            level_type = data.get(f"levels-{index}-type")
 
-            if level_type == "play":
-                sb, bb = self._parse_play_levels(index, data)
-                info = {
-                    "level_type": "play",
-                    "small_blind": sb,
-                    "big_blind": bb,
-                }
-            elif level_type == "break":
-                info = {
-                    "level_type": "break",
-                }
-            else:
-                msg = f"Invalid level type in level {index}"
-                raise forms.ValidationError(msg)
-
-            try:
-                duration_minutes = int(data[f"levels-{index}-duration"])
-            except (KeyError, ValueError):
-                msg = f"Invalid duration in level {index}"
-                raise forms.ValidationError(msg) from None
-
-            if duration_minutes <= 0:
-                msg = f"Level {index} duration must be positive"
-                raise forms.ValidationError(msg)
-
-            info["duration_seconds"] = duration_minutes * 60
-            levels.append(info)
+            match level_type:
+                case "play":
+                    levels.append(self._parse_play_level(index, data))
+                case "break":
+                    levels.append(self._parse_break_level(index, data))
+                case _:
+                    msg = f"Invalid level type in level {index}: {level_type}"
+                    raise forms.ValidationError(msg)
             index += 1
-            continue
 
         if not levels:
             msg = "At least one blind level is required."

@@ -1,7 +1,7 @@
 import logging
 
 from django.db import models
-from django.db.models import Q
+from django.db.models import FilteredRelation, Q
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
@@ -10,165 +10,24 @@ from poker_club_manager.common.models import AbstractTimestampedModel
 logger = logging.getLogger(__name__)
 
 
-class BlindsScheduleQuerySet(models.QuerySet):
-    def global_or_owned(self, user_id):
-        if user_id is None:
-            return self.filter(is_global=True)
-        return self.filter(
-            Q(is_global=True) | Q(created_by__isnull=False, created_by=user_id),
-        )
-
-
-class BlindsSchedule(AbstractTimestampedModel):
-    name = models.CharField(_("Name"), max_length=255)
-    created_by = models.ForeignKey(
-        "users.User",
-        on_delete=models.CASCADE,
-        related_name="blinds_schedules",
-        verbose_name=_("Created By"),
-        null=True,
-        blank=True,
-    )
-    is_global = models.BooleanField(_("Is Global"), default=False)
-
-    objects = BlindsScheduleQuerySet.as_manager()
-
-    class Meta:
-        verbose_name = _("Blinds Schedule")
-        verbose_name_plural = _("Blinds Schedules")
-
-    def __str__(self):
-        return self.name
-
-
-class BlindsTimerQuerySet(models.QuerySet):
-    def active(self):
-        return self.filter(Q(is_finished=False))
-
-
-class BlindsTimer(AbstractTimestampedModel):
-    name = models.CharField(_("Name"), max_length=255)
-    event = models.ForeignKey(
-        "events.Event",
-        related_name="timers",
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-    )
-
-    start_level_index = models.PositiveIntegerField(default=1, auto_created=True)
-    level_started_at = models.DateTimeField(auto_now_add=True)
-    is_paused = models.BooleanField(default=True, auto_created=True)
-    paused_at = models.DateTimeField(null=True, auto_now_add=True)
-    accumulated_pause_seconds = models.PositiveIntegerField(
-        default=0,
-        auto_created=True,
-    )
-    is_finished = models.BooleanField(default=False, auto_created=True)
-
-    objects = BlindsTimerQuerySet.as_manager()
-
-    class Meta:
-        verbose_name = _("Blinds Timer")
-        verbose_name_plural = _("Blinds Timers")
-
-    def __str__(self):
-        return f"{self.name} (ID: {self.id})"
-
-    def get_current_level(self):
-        s = self.start_level_index - 1  # Adjust for 0-indexed list
-        levels = self.get_or_update_cached_levels()
-        if self.is_finished:
-            return s + 1, levels[s]
-
-        elapsed = self.elapsed_seconds_since_start
-        cumulative = 0
-
-        for i in range(s, len(levels)):
-            level = levels[i]
-            cumulative += level.duration_seconds
-            if elapsed < cumulative:
-                break
-        return i + 1, levels[i]
-
-    @property
-    def elapsed_seconds_since_start(self) -> int:
-        now = timezone.now()
-        elapsed = int((now - self.level_started_at).total_seconds())
-
-        # If paused, deduct time since paused
-        if self.is_paused and self.paused_at is not None:
-            elapsed -= int((now - self.paused_at).total_seconds())
-
-        # Deduct accumulated paused time (from previous pauses)
-        elapsed -= self.accumulated_pause_seconds
-
-        return max(0, elapsed)
-
-    @property
-    def max_level_index(self) -> int:
-        return len(self.get_or_update_cached_levels())
-
-    @property
-    def can_decrement_level(self) -> bool:
-        return self.start_level_index > 1
-
-    @property
-    def can_increment_level(self) -> bool:
-        return self.start_level_index < self.max_level_index
-
-    def move_start_level(self, level_index: int):
-        if not self.is_finished and 1 <= level_index <= self.max_level_index:
-            self.start_level_index = level_index
-            self.level_started_at = timezone.now()
-            self.accumulated_pause_seconds = 0
-            self.is_paused = False
-            self.paused_at = None
-            self.save()
-
-    def get_or_update_cached_levels(self):
-        if not hasattr(self, "_cached_levels"):
-            self.update_cached_levels()
-        return self._cached_levels
-
-    def update_cached_levels(self):
-        self._cached_levels = list(self.levels.all())
-
-    def pause(self):
-        if not self.is_finished and not self.is_paused and self.paused_at is None:
-            now = timezone.now()
-            self.paused_at = now
-            self.is_paused = True
-            self.save()
-
-    def resume(self):
-        if not self.is_finished and self.is_paused and self.paused_at is not None:
-            now = timezone.now()
-            self.accumulated_pause_seconds += int(
-                (now - self.paused_at).total_seconds(),
-            )
-            self.is_paused = False
-            self.paused_at = None
-            self.save()
+class BlindsLevelChoices(models.TextChoices):
+    PLAY = "play", _("Play")
+    BREAK = "break", _("Break")
 
 
 class BlindsLevel(AbstractTimestampedModel):
-    LEVEL_TYPE_PLAY = "play"
-    LEVEL_TYPE_BREAK = "break"
-
-    LEVEL_TYPE_CHOICES = [
-        (LEVEL_TYPE_PLAY, "Play"),
-        (LEVEL_TYPE_BREAK, "Break"),
-    ]
-
     level_index = models.PositiveIntegerField()
     level_type = models.CharField(
         max_length=10,
-        choices=LEVEL_TYPE_CHOICES,
+        choices=BlindsLevelChoices.choices,
+        default=BlindsLevelChoices.PLAY,
     )
     duration_seconds = models.PositiveIntegerField()
     small_blind = models.PositiveIntegerField(null=True, blank=True)
     big_blind = models.PositiveIntegerField(null=True, blank=True)
+
+    notes = models.TextField(blank=True)
+    management_messages = models.JSONField(default=dict, blank=True)
 
     class Meta:
         verbose_name = _("Blinds Level")
@@ -183,17 +42,175 @@ class BlindsLevel(AbstractTimestampedModel):
         )
 
 
-class BlindsScheduleLevel(BlindsLevel):
-    schedule = models.ForeignKey(
-        BlindsSchedule,
+class BlindTimerStates(models.TextChoices):
+    RUNNING = "running", _("Running")
+    PAUSED = "paused", _("Paused")
+    FINISHED = "finished", _("Finished")
+
+
+class BlindsTimerQuerySet(models.QuerySet):
+    def active(self):
+        return self.filter(
+            Q(state=BlindTimerStates.RUNNING) | Q(state=BlindTimerStates.PAUSED),
+        )
+
+    def annotate_current_level(self):
+        return self.annotate(
+            current_level_relation=FilteredRelation(
+                "levels",
+                condition=Q(levels__level_index=models.F("current_level_index")),
+            ),
+        ).select_related("current_level_relation")
+
+
+class BlindsTimer(AbstractTimestampedModel):
+    name = models.CharField(_("Name"), max_length=255)
+    event = models.ForeignKey(
+        "events.Event",
+        related_name="timers",
         on_delete=models.CASCADE,
-        related_name="levels",
-        verbose_name=_("Blinds Schedule"),
+        blank=True,
+        null=True,
     )
 
+    current_level_index = models.PositiveIntegerField(default=1, auto_created=True)
+    current_level_started_at = models.DateTimeField(
+        default=timezone.now,
+    )
+    state = models.CharField(
+        max_length=50,
+        choices=BlindTimerStates.choices,
+        default=BlindTimerStates.RUNNING,
+    )
+    skipped_ms = models.FloatField(default=0.0)
+    paused_at = models.DateTimeField(null=True, blank=True)
+
+    objects = BlindsTimerQuerySet.as_manager()
+
     class Meta:
-        verbose_name = _("Blinds Schedule Level")
-        verbose_name_plural = _("Blinds Schedule Levels")
+        verbose_name = _("Blinds Timer")
+        verbose_name_plural = _("Blinds Timers")
+
+    def __str__(self):
+        return f"{self.name} (ID: {self.id})"
+
+    @property
+    def is_running(self) -> bool:
+        return self.state == BlindTimerStates.RUNNING and self.paused_at is None
+
+    @property
+    def is_paused(self) -> bool:
+        return self.state == BlindTimerStates.PAUSED and self.paused_at is not None
+
+    @property
+    def is_finished(self) -> bool:
+        return self.state == BlindTimerStates.FINISHED
+
+    @property
+    def max_level_index(self) -> int:
+        return len(self._get_or_set_cached_levels())
+
+    @property
+    def can_decrement_level(self) -> bool:
+        return self.current_level_index > 1
+
+    @property
+    def can_increment_level(self) -> bool:
+        return self.current_level_index < self.max_level_index
+
+    @property
+    def elapsed_ms(self) -> int:
+        start = self.current_level_started_at
+        now = timezone.now()
+        return int((now - start).total_seconds() * 1000 - self.skipped_ms)
+
+    def update(self) -> bool:
+        # Timers not running or already finished do not update
+        if self.is_finished or self.is_paused:
+            return False
+
+        current_level = self.get_current_level()
+        # If the level is finished, move to the next level or finish the timer
+        if self.elapsed_ms >= current_level.duration_seconds * 1000:
+            if self.can_increment_level:
+                self.set_current_level_index(self.current_level_index + 1)
+            else:
+                self.finish()
+            return True
+        return False
+
+    def _get_or_set_cached_levels(self) -> list:
+        if not hasattr(self, "_cached_levels"):
+            self._update_cached_levels()
+        return self._cached_levels
+
+    def _update_cached_levels(self) -> None:
+        self._cached_levels = list(self.levels.all().order_by("level_index"))
+        # Invalidate current level cache
+        self._cached_current_level = None
+
+    def get_current_level(self) -> "BlindsLevel":
+        return self._get_or_set_cached_levels()[self.current_level_index - 1]
+
+    def set_current_level_index(self, new_level_index: int) -> bool:
+        if self.is_finished:
+            return False
+        if new_level_index == self.current_level_index:
+            return False
+        if new_level_index < self.current_level_index and not self.can_decrement_level:
+            return False
+        if new_level_index > self.current_level_index and not self.can_increment_level:
+            return False
+
+        self.current_level_index = new_level_index
+        self.restart_level()
+
+        self._cached_current_level = None
+        return True
+
+    def restart_level(self) -> None:
+        self.skipped_ms = 0
+        self.state = BlindTimerStates.RUNNING
+        self.paused_at = None
+        self.current_level_started_at = timezone.now()
+        self.save()
+
+    def pause(self) -> None:
+        if self.is_running:
+            now = timezone.now()
+            self.paused_at = now
+            self.state = BlindTimerStates.PAUSED
+            self.save()
+
+    def resume(self) -> None:
+        if self.is_paused:
+            now = timezone.now()
+            self.skipped_ms += int((now - self.paused_at).total_seconds() * 1000)
+            self.state = BlindTimerStates.RUNNING
+            self.paused_at = None
+            self.save()
+
+    def finish(self) -> None:
+        if not self.is_finished:
+            self.state = BlindTimerStates.FINISHED
+            self.paused_at = None
+            self.save()
+
+    def get_remaining_time(self) -> tuple[int, int, int]:
+        if self.is_finished:
+            return 0, 0, 0
+
+        elapsed_ms = self.elapsed_ms
+        remainder_ms = max(
+            0, self.get_current_level().duration_seconds * 1000 - elapsed_ms,
+        )
+        remainder_seconds = remainder_ms // 1000
+
+        hours = remainder_seconds // 3600
+        minutes = (remainder_seconds % 3600) // 60
+        seconds = remainder_seconds % 60
+
+        return hours, minutes, seconds
 
 
 class BlindsTimerLevel(BlindsLevel):

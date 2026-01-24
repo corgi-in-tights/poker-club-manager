@@ -17,8 +17,23 @@ def active_timers(request: HttpRequest):
 
 
 def detail_timer(request: HttpRequest, timer_id: int):
-    timer = get_object_or_404(BlindsTimer, id=timer_id)
-    return render(request, "timers/detail.html", {"timer": timer})
+    timer = get_object_or_404(BlindsTimer.objects.all(), id=timer_id)
+    level = timer.get_current_level()
+    hours, minutes, seconds = timer.get_remaining_time()
+
+    return render(
+        request,
+        "timers/detail.html",
+        {
+            "timer": timer,
+            "level": level,
+            "display": {
+                "hours": round(hours),
+                "minutes": round(minutes),
+                "seconds": round(seconds),
+            },
+        },
+    )
 
 
 def create_timer(request: HttpRequest):
@@ -46,28 +61,48 @@ def create_timer(request: HttpRequest):
     return render(request, "timers/create.html", {"form": form})
 
 
+def level_field_partial(request: HttpRequest):
+    requested_level_type = request.GET.get("type", "play")
+
+    prev_index = int(request.GET.get("index"))
+    new_index = prev_index + 1
+    context = {
+        "index": new_index,
+        "type": requested_level_type,
+    }
+
+    prev_level_type = request.GET.get(f"levels-{prev_index}-type", "play")
+    if requested_level_type == "play":
+        if prev_level_type == "play":
+            prev_small = int(request.GET.get(f"levels-{prev_index}-small", 1))
+            prev_big = int(request.GET.get(f"levels-{prev_index}-big", 2))
+            context["small"] = prev_small * 2
+            context["big"] = prev_big * 2
+        else:
+            context["small"] = 1
+            context["big"] = 2
+
+    context["duration"] = int(request.GET.get(f"levels-{prev_index}-duration", "15"))
+
+    return render(request, "timers/partials/level_field.html", context=context)
+
+
 @require_POST
-def timer_control(request: HttpRequest, timer_id: int):
+def control_timer(request: HttpRequest, timer_id: int):
     timer = get_object_or_404(BlindsTimer, id=timer_id)
 
     if not request.user.has_perm("events.manage_event"):
         raise PermissionDenied
 
-    if request.method == "POST":
-        action = request.POST.get("action")
-        if action == "next":
-            if timer.can_increment_level:
-                timer.update_level(timer.current_level_index + 1)
-        elif action == "previous":
-            if timer.can_decrement_level:
-                timer.update_level(timer.current_level_index - 1)
-        elif action == "pause":
-            timer.pause()
-        elif action == "resume":
-            timer.resume()
-
+    action = request.POST.get("action")
+    if action == "next":
+        if timer.can_increment_level:
+            timer.set_current_level_index(timer.current_level_index + 1)
+    elif action == "previous":
+        if timer.can_decrement_level:
+            timer.set_current_level_index(timer.current_level_index - 1)
+    elif action == "pause":
+        timer.pause()
+    elif action == "resume":
+        timer.resume()
     return render(request, "timers/detail.html#timer_controls", {"timer": timer})
-
-
-def stream(request: HttpRequest, timer_id: int):
-    assert NotImplementedError("Streaming not yet implemented")

@@ -4,22 +4,26 @@
 
 {% block compressed_js %}
   {{ block.super }}
-  <script defer src="{% static 'js/timers/detail.js' %}"></script>
+  <script defer src="{% static 'js/timers/poll.js' %}"></script>
 {% endblock compressed_js %}
 {% block content %}
   <h3>{{ timer.name }} Details</h3>
-  <input type="hidden"
-         id="timer-stream-url"
-         value="{% url 'timers:stream' timer.id %}" />
-  <p>
-    Level: <span id="level">{{ timer.current_level_index }}</span>
-  </p>
-  <p>
-    Level Started At: <span id="level_started_at">{{ timer.level_started_at|date:"Y-m-d H:i:s" }}</span>
-  </p>
-  <p>
-    Is Paused: <span id="paused">{{ timer.is_paused }}</span>
-  </p>
+
+  <script>
+    const pollUrl = "{% url 'api:timer-poll' timer.id %}";
+  </script>
+
+  <div id="timer-display">
+    <h4><span id="timer-state"></span></h4>
+    <h4><span id="timer-level-title"></span></h4>
+    <div id="timer-clock">
+      <span id="timer-hours"></span>:<span id="timer-minutes"></span>:<span id="timer-seconds"></span>
+    </div>
+  </div>
+  
+  {{ timer.elapsed_seconds_since_level_start }}
+  {{ timer.accumulated_pause_seconds }}
+
   {% partialdef manage-timer inline %}
   {% if perms.events.manage_event %}
     <h3>Manage Timer</h3>

@@ -7,13 +7,24 @@
   <form method="post">
     {% csrf_token %}
     {{ form|crispy }}
-    <select name="levels-1-type">
-      <option value="play" selected>Play</option>
-      <option value="break">Break</option>
-    </select>
-    <input name="levels-1-small" value="100" />
-    <input name="levels-1-big" value="200" />
-    <input name="levels-1-duration" value="15" />
+    <div id="levels-wrapper">
+      <div id="levels-container">{% include "timers/partials/level_field.html" with type="play" index="1" small=1 big=2 duration=15 %}</div>
+      <button type="button"
+              class="btn btn-secondary"
+              hx-get="{% url 'timers:level_field' %}?type=play"
+              hx-target="#levels-container"
+              hx-swap="beforeend"
+              hx-include=".level-row:last-child"
+              id="add-level-btn">Add Level</button>
+
+      <button type="button"
+              class="btn btn-secondary"
+              hx-get="{% url 'timers:level_field' %}?type=break"
+              hx-target="#levels-container"
+              hx-swap="beforeend"
+              hx-include=".level-row:last-child"
+              id="add-level-btn">Add Break</button>
+    </div>
     <button type="submit" class="btn btn-primary">Create Timer</button>
   </form>
 {% endblock content %}

@@ -1,17 +1,22 @@
-from rest_framework import permissions
+from rest_framework import permissions, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.shortcuts import get_object_or_404
-from rest_framework.views import APIView
 
 from poker_club_manager.timers.models import BlindsTimer
 
 from .serializers import BlindsTimerPollSerializer
 
 
-class PollTimer(APIView):
-    permission_classes = [permissions.IsAuthenticated]
+class TimerViewSet(viewsets.GenericViewSet):
+    queryset = BlindsTimer.objects.all()
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
-    def poll(self, request, timer_id: int) -> Response:
-        timer = get_object_or_404(BlindsTimer, pk=timer_id)
+    @action(detail=True, methods=["get"])
+    def poll(self, request, pk=None):
+        timer = self.get_object()
+        # Lazy update the timer state before returning data
+        # not the most scalable or secure but works for now
+        timer.update()
+
         serializer = BlindsTimerPollSerializer(timer)
         return Response(serializer.data)

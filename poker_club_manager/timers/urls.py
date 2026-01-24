@@ -7,13 +7,13 @@ urlpatterns = [
     path("", views.active_timers, name="active"),
     path("create/", views.create_timer, name="create"),
     path("<int:timer_id>/", views.detail_timer, name="detail"),
-    path("<int:timer_id>/stream/", views.timer_stream, name="stream"),
 ]
 
 urlpatterns += [
     path(
         "_control/<int:timer_id>/",
-        views.timer_control,
+        views.control_timer,
         name="control",
     ),
+    path("_level_field/", views.level_field_partial, name="level_field"),
 ]

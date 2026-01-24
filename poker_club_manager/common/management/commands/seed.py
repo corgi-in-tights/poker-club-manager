@@ -129,8 +129,6 @@ def run_seed(command, mode, count):
         User=apps.get_model("users", "User"),
         SeasonMembership=apps.get_model("common", "SeasonMembership"),
         Event=apps.get_model("events", "Event"),
-        BlindsScheduleLevel=apps.get_model("timers", "BlindsScheduleLevel"),
-        BlindsSchedule=apps.get_model("timers", "BlindsSchedule"),
         BlindsTimerLevel=apps.get_model("timers", "BlindsTimerLevel"),
         BlindsTimer=apps.get_model("timers", "BlindsTimer"),
     )
