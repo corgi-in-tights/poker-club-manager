@@ -3,9 +3,14 @@ const PAUSED = 'paused';
 const FINISHED = 'finished';
 
 window.onload = (function () {
+    let poller = null;
+    let ticker = null;
+    let lastSyncRemainingMs = null;
+    let lastSyncAt = null;
+
     let currentState = null;
     let currentLevelId = null;
-    let clientPausedAt = null;
+    let currentPausedAt = null;
 
     const stateElement = document.getElementById('timer-state');
     const levelTitleElement = document.getElementById('timer-level-title');
@@ -14,61 +19,31 @@ window.onload = (function () {
     const hourElement = document.getElementById('timer-hours');
     const minuteElement = document.getElementById('timer-minutes');
     const secondElement = document.getElementById('timer-seconds');
-
     const setClock = (hours, minutes, seconds) => {
         hourElement.textContent = String(Math.max(0, hours)).padStart(2, '0');
         minuteElement.textContent = String(Math.max(0, minutes)).padStart(2, '0');
         secondElement.textContent = String(Math.max(0, seconds)).padStart(2, '0');
     }
-
-    let ticker = null;
-    const startClockTicker = () => {
-        if (ticker === null) {
-            ticker = setInterval(() => {
-                let hours = parseInt(hourElement.textContent);
-                let minutes = parseInt(minuteElement.textContent);
-                let seconds = parseInt(secondElement.textContent);
-
-                if (seconds > 0) {
-                    seconds -= 1;
-                } else {
-                    if (minutes > 0) {
-                        minutes -= 1;
-                        seconds = 59;
-                    } else {
-                        if (hours > 0) {
-                            hours -= 1;
-                            minutes = 59;
-                            seconds = 59;
-                        } else {
-                            // Timer has reached zero
-                            stopClockTicker();
-                            return;
-                        }
-                    }
-                }
-                setClock(hours, minutes, seconds);
-            }, 1000);
-        }
-    };
-    const stopClockTicker = () => {
-        if (ticker !== null) {
-            clearInterval(ticker);
-            ticker = null;
-        }
-    };
     const clearClock = () => {
         clockElement.innerHTML = '--:--:--';
     };
 
     async function pollApi() {
         try {
-            const response = await fetch(pollUrl);
+            const response = await fetch(pollUrl, { signal: AbortSignal.timeout(700) });
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
-            const { level, state, skipped_ms, paused_at } = validateResponse(await response.json());
-            attemptToSyncWithServer(level, state, paused_at, skipped_ms);
+            const data = await response.json();
+            const requiredFields = ['level', 'state', 'paused_at', 'skipped_ms'];
+            for (const field of requiredFields) {
+                if (!(field in data)) {
+                    throw new Error(`Missing ${field} in poll response`);
+                }
+            }
+            const { level, state, paused_at, skipped_ms } = data;
+
+            syncServerState(level, state, paused_at, skipped_ms);
 
         } catch (error) {
             console.error('Error fetching timer data:', error);
@@ -76,7 +51,7 @@ window.onload = (function () {
     }
 
     function validateResponse(data) {
-        const requiredFields = ['level', 'state', 'skipped_ms'];
+        const requiredFields = ['level', 'state', 'paused_at', 'skipped_ms'];
         for (const field of requiredFields) {
             if (!(field in data)) {
                 throw new Error(`Missing ${field} in poll response`);
@@ -85,102 +60,91 @@ window.onload = (function () {
         return { ...data };
     }
 
-    function attemptToSyncWithServer(level, state, timerPausedAt, skippedMs) {
-        if (state !== PAUSED) timerPausedAt = null; // ignore paused_at if not paused, because desync
-
-        const remainingServerMs = calculateRemainingMs(level.started_at, level.duration_seconds, timerPausedAt, skippedMs);
-        if (!isClientOutOfSync(remainingServerMs, level, state)) return;
-
-        console.log("Client out of sync, updating timer display from server data.");
-
-        updateTimerState(level, state);
-        updateTimerDisplay(remainingServerMs, level, state);
-    }
-
-    function isClientOutOfSync(remainingServerMs, level, state) {
-        // Either level or state changed definitely 
-        // or out of sync if more than 2 seconds difference
-        if (currentLevelId !== level.id || currentState !== state)
-            return true;
-
-        try {
-            const displayedTotalSeconds = parseInt(hourElement.textContent) * 3600 +
-                parseInt(minuteElement.textContent) * 60 +
-                parseInt(secondElement.textContent);
-            const serverTotalSeconds = Math.ceil(remainingServerMs / 1000);
-
-            return Math.abs(displayedTotalSeconds - serverTotalSeconds) > 2;
-        } catch (e) {
-            return true; // if parsing fails, consider out of sync
+    function syncServerState(level, state, pausedAt, skippedMs) {
+        // No change
+        if (state !== RUNNING && state === currentState && level.id === currentLevelId) return;
+        // If the state did change, controls should be re-rendered
+        else if (state !== currentState) {
+            document.body.dispatchEvent(new CustomEvent('timerStateChanged', {
+                detail: { newState: state }
+            }
+            ));
         }
-    }
 
-    function calculateRemainingMs(levelStart, levelDurationSeconds, timerPausedAt, skippedMs = 0) {
-        const start = new Date(levelStart);
-        // essentially if the server paused the timer, use that time as the paused point
-        // because 'now' is not advancing while paused
-        let elapsed;
-        if (timerPausedAt !== null && timerPausedAt !== undefined) {
-            elapsed = new Date(timerPausedAt) - start - skippedMs;
-        } else {
-            const now = new Date();
-            elapsed = now - start - skippedMs;
-        }
-        const remainderMs = Math.max(0, Math.floor(levelDurationSeconds * 1000 - elapsed));
-        return remainderMs;
-    }
 
-    function updateTimerState(level, state) {
+        // Wipe everything on finish
         if (state === FINISHED) {
-            stopClockTicker();
+            clearInterval(ticker);
+            ticker = null;
+            clearInterval(poller);
+            poller = null;
             clearClock();
-        } else if (state === RUNNING) {
-            // restart ticker at the start of the next second
-            if (currentState !== RUNNING) {
-                stopClockTicker();
-                const now = new Date();
-                const delay = 1000 - (now.getMilliseconds());
-                setTimeout(() => {
-                    startClockTicker();
-                }, delay);
-            }
-        } else if (state === PAUSED) {
-            stopClockTicker();
+            return;
         }
 
-        currentLevelId = level.id;
+        // Update remaining ms calculation
+        let elapsedMs;
+
+        const start = new Date(level.started_at);
+        // If paused, use pausedAt time instead of 'now'
+        if (state === PAUSED && pausedAt) {
+            const pausedAtTime = new Date(pausedAt);
+            elapsedMs = pausedAtTime - start - skippedMs;
+            lastSyncAt = pausedAtTime;
+            currentPausedAt = pausedAtTime;
+        } else {
+            const now = Date.now();
+            elapsedMs = now - start - skippedMs;
+            lastSyncAt = now;
+            currentPausedAt = null;
+        }
+        lastSyncRemainingMs = Math.max(0, level.duration_seconds * 1000 - elapsedMs);
+
+        // Update text
+        let text;
+        if (level.level_type == 'break') {
+            text = 'Break';
+        } else {
+            text = 'Level ' + parseInt(level.level_index) + ': ' + level.small_blind + '/' + level.big_blind;
+        }
+        levelTitleElement.textContent = text;
+        stateElement.textContent = state;
+
         currentState = state;
-    }
-
-    function updateTimerDisplay(remainingServerMs, level, state) {
-        const updateClock = () => {
-            const totalSeconds = Math.floor(remainingServerMs / 1000);
-            const hours = Math.floor(totalSeconds / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            setClock(hours, minutes, seconds);
-        }
-
-        const updateText = () => {
-            let text;
-            if (level.level_type == 'break') {
-                text = 'Break';
-            } else {
-                text = 'Level ' + parseInt(level.level_index) + ': ' + level.small_blind + '/' + level.big_blind;
-            }
-            levelTitleElement.textContent = text;
-
-            stateElement.textContent = state;
-        }
-
-        updateClock();
-        updateText();
+        currentLevelId = level.id;
     }
 
 
+    function renderClock() {
+        if (lastSyncRemainingMs === null) return;
+
+        let totalSeconds;
+        if (currentState === PAUSED && currentPausedAt) {
+            const pausedAtTime = new Date(currentPausedAt);
+            const elapsed = pausedAtTime - lastSyncAt;
+            const remaining = Math.max(0, lastSyncRemainingMs - elapsed);
+            totalSeconds = Math.floor(remaining / 1000);
+        } else {
+            const elapsed = Date.now() - lastSyncAt;
+            const remaining = Math.max(0, lastSyncRemainingMs - elapsed);
+            totalSeconds = Math.floor(remaining / 1000);
+        }
+
+        setClock(
+            Math.floor(totalSeconds / 3600),
+            Math.floor((totalSeconds % 3600) / 60),
+            totalSeconds % 60
+        );
+    }
+
+
+    // Poll the server to check for state updates
+    poller = setInterval(pollApi, 900);
+    // Keep locally updating the clock every 50ms
+    ticker = setInterval(renderClock, 200);
     pollApi();
-    setInterval(pollApi, 900);
 
+    // Anytime htmx updates the timer controls, re-poll the server
     document.addEventListener('htmx:afterOnLoad', (event) => {
         if (event.detail.target.id === 'timer-controls') {
             pollApi();

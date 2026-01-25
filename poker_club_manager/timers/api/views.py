@@ -16,6 +16,7 @@ class TimerViewSet(viewsets.GenericViewSet):
         timer = self.get_object()
         # Lazy update the timer state before returning data
         # not the most scalable or secure but works for now
+        # please don't hurt me for updating on a GET request
         timer.update()
 
         serializer = BlindsTimerPollSerializer(timer)

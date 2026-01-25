@@ -3,7 +3,6 @@ import logging
 from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_POST
 
 from .forms import BlindsTimerForm
 from .models import BlindsTimer, BlindsTimerLevel
@@ -64,45 +63,61 @@ def create_timer(request: HttpRequest):
 def level_field_partial(request: HttpRequest):
     requested_level_type = request.GET.get("type", "play")
 
-    prev_index = int(request.GET.get("index"))
-    new_index = prev_index + 1
+    # Copy the largest index in the context of the same requested level type
+    # essentially, PLAY levels skip BREAK levels for quick templating
+    # though we still need the actual max index to preserve ordering
+    max_index = 0
+    max_index_of_same_type = 0
+    data = request.GET.dict().copy()
+    for key, val in list(data.items()):
+        if key.startswith("levels-") and key.endswith("-type"):
+            max_index = max(max_index, int(key.split("-")[1]))
+            if val == requested_level_type:
+                max_index_of_same_type = max(
+                    max_index_of_same_type,
+                    int(key.split("-")[1]),
+                )
+
+    quick_template_index = max_index_of_same_type
+    new_index = max_index + 1
     context = {
         "index": new_index,
         "type": requested_level_type,
     }
 
-    prev_level_type = request.GET.get(f"levels-{prev_index}-type", "play")
+    prev_level_type = request.GET.get(f"levels-{quick_template_index}-type", "play")
     if requested_level_type == "play":
         if prev_level_type == "play":
-            prev_small = int(request.GET.get(f"levels-{prev_index}-small", 1))
-            prev_big = int(request.GET.get(f"levels-{prev_index}-big", 2))
+            prev_small = int(request.GET.get(f"levels-{quick_template_index}-small", 1))
+            prev_big = int(request.GET.get(f"levels-{quick_template_index}-big", 2))
             context["small"] = prev_small * 2
             context["big"] = prev_big * 2
         else:
             context["small"] = 1
             context["big"] = 2
 
-    context["duration"] = int(request.GET.get(f"levels-{prev_index}-duration", "15"))
+    context["duration"] = int(
+        request.GET.get(f"levels-{quick_template_index}-duration", "15"),
+    )
 
     return render(request, "timers/partials/level_field.html", context=context)
 
 
-@require_POST
 def control_timer(request: HttpRequest, timer_id: int):
     timer = get_object_or_404(BlindsTimer, id=timer_id)
 
     if not request.user.has_perm("events.manage_event"):
         raise PermissionDenied
 
-    action = request.POST.get("action")
-    if action == "next":
-        if timer.can_increment_level:
+    if request.method == "POST":
+        action = request.POST.get("action")
+        if action == "next" and timer.can_increment_level:
             timer.set_current_level_index(timer.current_level_index + 1)
-    elif action == "previous":
-        if timer.can_decrement_level:
+        elif action == "previous" and timer.can_decrement_level:
             timer.set_current_level_index(timer.current_level_index - 1)
-    elif action == "pause":
-        timer.pause()
-    elif action == "resume":
-        timer.resume()
-    return render(request, "timers/detail.html#timer_controls", {"timer": timer})
+        elif action == "pause" and timer.is_running:
+            timer.pause()
+        elif action == "resume" and timer.is_paused:
+            timer.resume()
+
+    return render(request, "timers/detail.html#timer-controls", {"timer": timer})

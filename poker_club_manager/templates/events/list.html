@@ -66,6 +66,9 @@
                     <button data-url="{% url 'events:detail' event.id %}"
                             class="btn btn-sm btn-outline-secondary"
                             onclick="copyUrl(this)">Copy URL</button>
+                    {% if perms.events.manage_event %}
+                      <a class="btn btn-secondary" href="{% url 'events:manage' event.id %}">🔧</a>
+                    {% endif %}
                   </div>
                 </div>
               </div>

@@ -14,7 +14,7 @@
               hx-get="{% url 'timers:level_field' %}?type=play"
               hx-target="#levels-container"
               hx-swap="beforeend"
-              hx-include=".level-row:last-child"
+              hx-include=".level-row:nth-last-child(-n+2)"
               id="add-level-btn">Add Level</button>
 
       <button type="button"
@@ -22,7 +22,7 @@
               hx-get="{% url 'timers:level_field' %}?type=break"
               hx-target="#levels-container"
               hx-swap="beforeend"
-              hx-include=".level-row:last-child"
+              hx-include=".level-row:nth-last-child(-n+2)"
               id="add-level-btn">Add Break</button>
     </div>
     <button type="submit" class="btn btn-primary">Create Timer</button>

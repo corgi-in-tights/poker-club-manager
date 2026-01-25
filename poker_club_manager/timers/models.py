@@ -62,6 +62,26 @@ class BlindsTimerQuerySet(models.QuerySet):
             ),
         ).select_related("current_level_relation")
 
+    def cleanup_finished(self):
+        candidates = self.filter(state=BlindTimerStates.RUNNING)
+        finished_ids = []
+
+        now = timezone.now()
+        for timer in candidates:
+            seconds_passed = max(
+                1,
+                (now - timer.current_level_started_at).total_seconds()
+                - timer.skipped_ms / 1000,
+            )
+            if seconds_passed >= timer.total_remaining_duration:
+                finished_ids.append(timer.id)
+
+        if finished_ids:
+            return self.filter(id__in=finished_ids).update(
+                state=BlindTimerStates.FINISHED,
+            )
+        return 0
+
 
 class BlindsTimer(AbstractTimestampedModel):
     name = models.CharField(_("Name"), max_length=255)
@@ -123,6 +143,17 @@ class BlindsTimer(AbstractTimestampedModel):
         start = self.current_level_started_at
         now = timezone.now()
         return int((now - start).total_seconds() * 1000 - self.skipped_ms)
+
+    @property
+    def total_remaining_duration(self) -> int:
+        r = 0
+        for level in self._get_or_set_cached_levels()[self.current_level_index - 1 :]:
+            if level.level_index == self.current_level_index:
+                elapsed = self.elapsed_ms // 1000
+                r += max(0, level.duration_seconds - elapsed)
+            else:
+                r += level.duration_seconds
+        return r
 
     def update(self) -> bool:
         # Timers not running or already finished do not update
@@ -202,7 +233,8 @@ class BlindsTimer(AbstractTimestampedModel):
 
         elapsed_ms = self.elapsed_ms
         remainder_ms = max(
-            0, self.get_current_level().duration_seconds * 1000 - elapsed_ms,
+            0,
+            self.get_current_level().duration_seconds * 1000 - elapsed_ms,
         )
         remainder_seconds = remainder_ms // 1000
 
