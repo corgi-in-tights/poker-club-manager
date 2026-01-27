@@ -1,0 +1,13 @@
+<h4>Search Results</h4>
+{% for user in results %}
+  <div>
+    <button class="add-participant-button"
+            hx-post="{% url 'events:add-participant' event.id %}"
+            hx-vals='{"user_id": "{{ user.id }}"}'
+            hx-target="#participant-list">
+      <span class="search-result-name">{{ user.name }}</span>
+    </button>
+  </div>
+{% empty %}
+  <p>No users found.</p>
+{% endfor %}

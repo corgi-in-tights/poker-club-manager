@@ -27,7 +27,7 @@
   <!-- ## Event List ## -->
   <div id="event-list-wrapper" hx-on::after-request="updateHistory()">
     <div id="event-list">
-      {% partialdef event-cards inline %}
+      {% partialdef event-list inline %}
       {% url 'events:list' as update_url %}
       {% include "common/partials/page_nav.html" with page=page max_page=max_page update_url=update_url update_element="#event-list" %}
       <div class="row g-4">
@@ -55,7 +55,7 @@
                       <a class="btn btn-warning" href="{% url 'events:check_in' event.id %}">Check In</a>
                     {% endif %}
                   {% elif event.is_rsvp_open %}
-                    {% include "events/partials/rsvp_button.html" with event=event rsvped=event.is_rsvped %}
+                    {% include "events/partials/rsvp.html" with event=event rsvped=event.is_rsvped %}
                   {% elif event.is_finished %}
                     <span>Finished</span>
                   {% else %}
@@ -68,6 +68,17 @@
                             onclick="copyUrl(this)">Copy URL</button>
                     {% if perms.events.manage_event %}
                       <a class="btn btn-secondary" href="{% url 'events:manage' event.id %}">🔧</a>
+                    {% endif %}
+                    {% if event.is_rsvp_open or event.is_active %}
+                      {% with event.going_count|add:event.late_count as interested_count %}
+                        {% if interested_count > 50 %}
+                          <p>50+ people are interested</p>
+                        {% elif interested_count > 20 %}
+                          <p>20+ people are interested</p>
+                        {% elif interested_count > 10 %}
+                          <p>10+ people are interested</p>
+                        {% endif %}
+                      {% endwith %}
                     {% endif %}
                   </div>
                 </div>

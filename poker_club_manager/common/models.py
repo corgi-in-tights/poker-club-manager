@@ -100,7 +100,7 @@ class SeasonMembership(AbstractTimestampedModel):
         unique_together = ("user", "season")
 
     def __str__(self):
-        return f"SeasonProfile {self.id} for User {self.user.username}"
+        return f"Season Membership for {self.season.name} for User {self.user.username}"
 
 
 class MemberStatistics(AbstractTimestampedModel):

@@ -184,4 +184,5 @@ dependencies = [
     "rcssmin==1.2.2",
     "psycopg2-binary (>=2.9.11,<3.0.0)",
     "django-template-partials>=25.3",
+    "django-htmx>=1.27.0",
 ]

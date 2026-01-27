@@ -24,8 +24,13 @@ window.onload = (function () {
         minuteElement.textContent = String(Math.max(0, minutes)).padStart(2, '0');
         secondElement.textContent = String(Math.max(0, seconds)).padStart(2, '0');
     }
-    const clearClock = () => {
+    const finishClock = () => {
+        clearInterval(ticker);
+        ticker = null;
+        clearInterval(poller);
+        poller = null;
         clockElement.innerHTML = '--:--:--';
+        stateElement.textContent = FINISHED;
     };
 
     async function pollApi() {
@@ -71,14 +76,9 @@ window.onload = (function () {
             ));
         }
 
-
         // Wipe everything on finish
         if (state === FINISHED) {
-            clearInterval(ticker);
-            ticker = null;
-            clearInterval(poller);
-            poller = null;
-            clearClock();
+            finishClock();
             return;
         }
 

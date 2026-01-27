@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import logging
 
 from django.conf import settings
@@ -142,7 +144,7 @@ class Event(AbstractTimestampedModel):
             not self.is_active and not self.is_finished and now >= self.rsvp_start_date
         )
 
-    def rsvp_user(self, user: User, status: str) -> "EventRSVP":
+    def rsvp_user(self, user: User, status: str) -> EventRSVP:
         rsvp, created = EventRSVP.objects.get_or_create(
             user=user,
             event=self,
@@ -162,7 +164,7 @@ class Event(AbstractTimestampedModel):
             return False
         return True
 
-    def add_user_participant(self, user: User) -> "Participant":
+    def add_user_participant(self, user: User) -> Participant:
         p, created = Participant.objects.get_or_create(
             event=self,
             user=user,
@@ -186,16 +188,64 @@ class Event(AbstractTimestampedModel):
         p.save()
         return p
 
-    def add_guest_participant(self, guest_name: str, guest_email: str) -> "Participant":
+    def remove_user_participant(
+        self,
+        participant_id: int | None = None,
+        participant: Participant = None,
+        user: User = None,
+    ) -> bool:
+        try:
+            if participant_id is not None:
+                participant = Participant.objects.get(id=participant_id, event=self)
+            elif user is not None:
+                participant = Participant.objects.get(event=self, user=user)
+            elif participant is None:
+                msg = "Either participant_id or user must be provided."
+                raise ValueError(msg)
+            participant.delete()
+        except ObjectDoesNotExist:
+            return False
+        return True
+
+    def add_guest_participant(
+        self,
+        name: str,
+        email: str,
+    ) -> GuestParticipant:
         p, created = GuestParticipant.objects.get_or_create(
             event=self,
-            guest_name=guest_name,
-            guest_email=guest_email,
+            name=name,
+            email=email.lower(),
         )
         if not created:  # Already checked in
             return False
         p.save()
         return p
+
+    def remove_guest_participant(
+        self,
+        guest_id: int | None = None,
+        email: str | None = None,
+    ) -> bool:
+        try:
+            if guest_id is not None:
+                guest = GuestParticipant.objects.get(
+                    id=guest_id,
+                    event=self,
+                )
+            elif email is not None:
+                guest = GuestParticipant.objects.get(
+                    event=self,
+                    email=email.lower(),
+                )
+            else:
+                msg = "Either guest_id or email must be provided."
+                raise ValueError(msg)
+
+            guest.delete()
+        except ObjectDoesNotExist:
+            return False
+        return True
 
     def is_user_rsvped(self, user: User) -> bool:
         return EventRSVP.objects.filter(user=user, event=self).exists()

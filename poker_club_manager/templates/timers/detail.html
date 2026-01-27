@@ -22,37 +22,47 @@
       <span id="timer-hours"></span>:<span id="timer-minutes"></span>:<span id="timer-seconds"></span>
     </div>
   </div>
-  {% partialdef timer-controls inline %}
   {% if perms.events.manage_event %}
-    <div id="timer-controls-wrapper">
-      <div id="timer-controls"
-           hx-trigger="timerStateChanged from:body"
-           hx-swap="innerHTML"
-           hx-get="{% url 'timers:control' timer.id %}">
+    {% partialdef timer-controls inline %}
+    <div id="timer-controls"
+         hx-trigger="timerStateChanged from:body"
+         hx-swap="innerHTML"
+         hx-get="{% url 'timers:control' timer.id %}">
+      <div id="playback-controls">
         <h3>Manage Timer</h3>
         <button hx-post="{% url 'timers:control' timer.id %}"
                 hx-target="#timer-controls"
                 hx-swap="innerHTML"
                 hx-vals='{"action": "previous"}'
-                {% if not timer.can_decrement_level %}disabled{% endif %}>Previous Level</button>
+                {% if timer.is_finished or not timer.can_decrement_level %}disabled{% endif %}>Previous Level</button>
         {% if timer.is_paused %}
           <button hx-post="{% url 'timers:control' timer.id %}"
                   hx-target="#timer-controls"
                   hx-swap="innerHTML"
-                  hx-vals='{"action": "resume"}'>Resume</button>
+                  hx-vals='{"action": "resume"}'
+                  {% if timer.is_finished %}disabled{% endif %}>Resume</button>
         {% else %}
           <button hx-post="{% url 'timers:control' timer.id %}"
                   hx-target="#timer-controls"
                   hx-swap="innerHTML"
-                  hx-vals='{"action": "pause"}'>Pause</button>
+                  hx-vals='{"action": "pause"}'
+                  {% if timer.is_finished %}disabled{% endif %}>Pause</button>
         {% endif %}
         <button hx-post="{% url 'timers:control' timer.id %}"
                 hx-target="#timer-controls"
                 hx-swap="innerHTML"
                 hx-vals='{"action": "next"}'
-                {% if not timer.can_increment_level %}disabled{% endif %}>Next Level</button>
+                {% if timer.is_finished or not timer.can_increment_level %}disabled{% endif %}>Next Level</button>
+      </div>
+      <div id="level-controls">
+        <h2>Levels</h2>
+        <ol>
+          {% for level in timer.levels.all %}
+            {% include "timers/partials/level_field.html" with type=level.level_type small=level.small_blind big=level.big_blind duration=level.duration_seconds index=forloop.counter %}
+          {% endfor %}
+        </ol>
       </div>
     </div>
-  {% endif %}
-{% endpartialdef timer-controls %}
+  {% endpartialdef timer-controls %}
+{% endif %}
 {% endblock content %}

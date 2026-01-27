@@ -12,8 +12,14 @@
 {% endblock compressed_js %}
 {% block content %}
   {% block season_header %}
-    <h2>Leaderboard for Season: {{ season.name }}</h2>
-    <a href="{% url 'points:archive' %}">View Archived Seasons</a>
+    {% if archived %}
+      <h3>Archived Leaderboard for Season: {{ season.name }}</h3>
+      <a href="{% url 'points:leaderboard' %}">View Current Season</a>
+      <a href="{% url 'points:archive' %}">View Other Archived Seasons</a>
+    {% else %}
+      <h2>Leaderboard for Season: {{ season.name }}</h2>
+      <a href="{% url 'points:archive' %}">View Archived Seasons</a>
+    {% endif %}
   {% endblock season_header %}
   <!-- ## Filter Bar ## -->
   {% url 'points:leaderboard' as update_url %}

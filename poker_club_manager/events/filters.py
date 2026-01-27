@@ -14,6 +14,7 @@ class EventListFilter:
     order: str = "relevance"
     include_finished: bool = False
     user_id: int | None = None
+    annotate_details: bool = True
 
     def apply(self):
         """
@@ -24,6 +25,14 @@ class EventListFilter:
             if not self.include_finished
             else Event.objects.all()
         )
+        if self.annotate_details:
+            qs = qs.annotate_rsvp_count()
+            if self.user_id:
+                qs = (
+                    qs.annotate_check_in(self.user_id)
+                    .annotate_rsvp(self.user_id)
+                    .annotate_check_in(self.user_id)
+                )
 
         if self.search_query:
             qs = qs.search(self.search_query)

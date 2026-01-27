@@ -15,7 +15,7 @@
         <a class="btn btn-warning" href="{% url 'events:check_in' event.id %}">Check In</a>
       {% endif %}
     {% elif event.is_rsvp_open %}
-      {% include "events/partials/rsvp_button.html" with event=event rsvped=event.is_rsvped %}
+      {% include "events/partials/rsvp.html" with event=event rsvped=event.is_rsvped %}
     {% elif event.is_finished %}
       <span>Finished</span>
     {% else %}

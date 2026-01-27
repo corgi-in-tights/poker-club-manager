@@ -76,6 +76,7 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
                 },
             ),
             "default_filters": default_filters,
+            "archived": season.is_active is False,
         },
     )
 

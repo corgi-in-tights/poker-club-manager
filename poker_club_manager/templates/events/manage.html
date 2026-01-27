@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% load static %}
+{% load static partials %}
 
 {% block compressed_js %}
   {{ block.super }}
@@ -11,37 +11,45 @@
   <h1>Managing Event {{ event.title }}</h1>
   <div>
     <h3>Participants</h3>
-    <table>
-      {% for participant in participants %}
-        <tr>
-          <td>{{ forloop.counter }}.</td>
-          <td>{{ participant.user.username }}</td>
-          <td>{{ participant.user.name }}</td>
-          <td>{{ participant.user.email }}</td>
-          <td>{{ participant.final_position }}</td>
-          <td>
-            <button data-id="{{ participant.id }}">Remove</button>
-          </td>
-        </tr>
-      {% empty %}
-        <tr>
-          <td colspan="2">No participants yet.</td>
-        </tr>
-      {% endfor %}
-    </table>
-    <form id="add-participant-form">
-      <input type="text"
-             name="participant_identifier"
-             placeholder="Email"
-             id="search-input"
-             class="search-input"
-             data-url="{% url 'api:user-fetch-matching-names' %}" />
-      <button type="submit" name="action">Add participant</button>
-    </form>
-    <p id="search-results"></p>
+    <div id="participant-list">
+      <input type="hidden"
+             id="add-participant-url"
+             value="{% url 'events:add-participant' event.id %}" />
+      {% partialdef participant-list inline %}
+      <table>
+        {% for participant in participants %}
+          <tr>
+            <td>{{ forloop.counter }}.</td>
+            <td>{{ participant.user.username }}</td>
+            <td>{{ participant.user.name }}</td>
+            <td>{{ participant.user.email }}</td>
+            <td>{{ participant.final_position }}</td>
+            <td>
+              <button class="eliminate-button"
+                      hx-delete="{% url 'events:eliminate-participant' event.id participant.id %}"
+                      hx-target="#participant-list">Eliminate</button>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="2">No participants yet.</td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% endpartialdef participant-list %}
   </div>
-  <div>
-    <h3>Guests</h3>
+  <input type="text"
+         name="participant_identifier"
+         placeholder="Search by name or username"
+         hx-get="{% url 'events:manage-search-users' event.id %}"
+         hx-target="#user-search-results"
+         hx-trigger="keyup changed delay:300ms" />
+  <div id="user-search-results"></div>
+</div>
+<div>
+  <h3>Guests</h3>
+  <div id="guest-list">
+    {% partialdef guest-list inline %}
     <table>
       {% for guest in guests %}
         <tr>
@@ -50,7 +58,9 @@
           <td>{{ guest.email }}</td>
           <td>{{ guest.final_position }}</td>
           <td>
-            <button data-id="{{ guest.id }}">Remove</button>
+            <button class="remove-guest-button"
+                    hx-delete="{% url 'events:remove-guest' event.id guest.id %}"
+                    hx-target="#guest-list">Remove</button>
           </td>
         </tr>
       {% empty %}
@@ -59,14 +69,21 @@
         </tr>
       {% endfor %}
     </table>
-    <form>
-      <input type="text" name="guest_username" placeholder="Username" required />
-      <input type="email" name="guest_email" placeholder="Email" required />
-      <button name="action">Add guest</button>
-    </form>
-  </div>
-  <div>
-    <h3>RSVPs</h3>
+  {% endpartialdef guest-list %}
+</div>
+<form method="post"
+      hx-post="{% url 'events:add-guest' event.id %}"
+      hx-target="#guest-list">
+  {% csrf_token %}
+  <input type="text" name="name" placeholder="Name" required />
+  <input type="email" name="email" placeholder="Email" required />
+  <button name="action">Add guest</button>
+</form>
+</div>
+<div>
+  <h3>RSVPs</h3>
+  <div id="rsvp-list">
+    {% partialdef rsvp-list inline %}
     <p>Going: {{ event.going_count }}, Late: {{ event.late_count }}</p>
     <table>
       {% for rsvp in rsvps %}
@@ -75,9 +92,6 @@
           <td>{{ rsvp.user.username }}</td>
           <td>{{ rsvp.user.name }}</td>
           <td>{{ rsvp.get_status_display }}</td>
-          <td>
-            <button data-id="{{ rsvp.id }}">Remove</button>
-          </td>
         </tr>
       {% empty %}
         <tr>
@@ -85,5 +99,7 @@
         </tr>
       {% endfor %}
     </table>
-  </div>
+  {% endpartialdef rsvp-list %}
+</div>
+</div>
 {% endblock content %}
