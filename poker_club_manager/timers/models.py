@@ -19,7 +19,7 @@ class BlindsLevel(AbstractTimestampedModel):
     level_index = models.PositiveIntegerField()
     level_type = models.CharField(
         max_length=10,
-        choices=BlindsLevelChoices.choices,
+        choices=BlindsLevelChoices,
         default=BlindsLevelChoices.PLAY,
     )
     duration_seconds = models.PositiveIntegerField()
@@ -99,7 +99,7 @@ class BlindsTimer(AbstractTimestampedModel):
     )
     state = models.CharField(
         max_length=50,
-        choices=BlindTimerStates.choices,
+        choices=BlindTimerStates,
         default=BlindTimerStates.RUNNING,
     )
     skipped_ms = models.FloatField(default=0.0)

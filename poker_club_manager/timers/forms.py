@@ -33,7 +33,7 @@ class BlindsTimerForm(forms.ModelForm):
         for key in keys:
             try:
                 value = int(data.get(f"levels-{index}-{key}"))
-            except (ValueError):
+            except ValueError:
                 msg = f"Invalid {key} in level {index}"
                 raise forms.ValidationError(msg) from None
             if value <= 0:

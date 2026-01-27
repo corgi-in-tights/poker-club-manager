@@ -22,5 +22,3 @@ class Command(BaseCommand):
             )
         else:
             self.stdout.write("No timers required cleanup.")
-
-

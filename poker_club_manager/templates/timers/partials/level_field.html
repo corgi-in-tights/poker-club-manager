@@ -1,36 +1,38 @@
 <div class="level-row border p-3 mb-2" id="level-{{ index }}">
+  {% if type == "play" %}
+    <h5>Level {{ index }}</h5>
+  {% else %}
+    <h5>Break</h5>
+  {% endif %}
+  <input type="hidden" name="levels-{{ index }}-type" value="{{ type }}" />
+  <div class="row">
     {% if type == "play" %}
-        <h5>Level {{ index }}</h5>
-    {% else %}
-        <h5>Break</h5>
+      <div class="col">
+        <label>Small</label>
+        <input name="levels-{{ index }}-small"
+               class="form-control"
+               type="number"
+               value="{{ small }}" />
+      </div>
+      <div class="col">
+        <label>Big</label>
+        <input name="levels-{{ index }}-big"
+               class="form-control"
+               type="number"
+               value="{{ big }}" />
+      </div>
     {% endif %}
-    <input type="hidden" name="levels-{{ index }}-type" value="{{ type }}" />
-
-    <div class="row">
-        {% if type == "play" %}
-        <div class="col">
-            <label>Small</label>
-            <input name="levels-{{ index }}-small"
-                   class="form-control"
-                   type="number"
-                   value="{{ small }}" />
-        </div>
-        <div class="col">
-            <label>Big</label>
-            <input name="levels-{{ index }}-big" class="form-control" type="number" value="{{ big }}" />
-        </div>
-        {% endif %}
-        <div class="col">
-            <label>Duration (Min)</label>
-            <input name="levels-{{ index }}-duration"
-                   class="form-control"
-                   type="number"
-                   value="{{ duration }}" />
-        </div>
-        <div class="col-auto d-flex align-items-end">
-            <button type="button"
-                    class="btn btn-danger"
-                    onclick="this.closest('.level-row').remove()">[X]</button>
-        </div>
+    <div class="col">
+      <label>Duration (Min)</label>
+      <input name="levels-{{ index }}-duration"
+             class="form-control"
+             type="number"
+             value="{{ duration }}" />
     </div>
+    <div class="col-auto d-flex align-items-end">
+      <button type="button"
+              class="btn btn-danger"
+              onclick="this.closest('.level-row').remove()">[X]</button>
+    </div>
+  </div>
 </div>

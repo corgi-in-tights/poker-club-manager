@@ -25,10 +25,10 @@
   {% partialdef timer-controls inline %}
   {% if perms.events.manage_event %}
     <div id="timer-controls-wrapper">
-      <div id="timer-controls" hx-trigger="timerStateChanged from:body"
+      <div id="timer-controls"
+           hx-trigger="timerStateChanged from:body"
            hx-swap="innerHTML"
            hx-get="{% url 'timers:control' timer.id %}">
-
         <h3>Manage Timer</h3>
         <button hx-post="{% url 'timers:control' timer.id %}"
                 hx-target="#timer-controls"

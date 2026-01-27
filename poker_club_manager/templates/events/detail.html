@@ -21,7 +21,6 @@
     {% else %}
       <span>RSVP opens on {{ event.rsvp_start_date|date:"F j, Y" }}</span>
     {% endif %}
-
     {% if perms.events.manage_event %}
       <a class="btn btn-primary" href="{% url 'events:manage' event.id %}">Manage</a>
     {% endif %}
