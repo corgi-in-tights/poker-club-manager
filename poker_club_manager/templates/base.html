@@ -18,7 +18,6 @@
     <meta name="author" content="Reyaan C" />
     <link rel="icon" href="{% static 'images/favicons/favicon.ico' %}" />
     {% block css %}
-      <!-- Latest compiled and minified Bootstrap CSS -->
       <link rel="stylesheet"
             href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.2.3/css/bootstrap.min.css"
             integrity="sha512-SbiR/eusphKoMVVXysTKG/7VseWii+Y3FdHrt0EpKgpToZeemhqHeZeLWLhJutz/2ut2Vw1uQEj2MbRF+TVBUA=="
@@ -53,7 +52,7 @@
       <!-- {% endcompress %} -->
     {% endblock javascript %}
   </head>
-  <body class="{% block bodyclass %}{% endblock bodyclass %}"
+  <body class="d-flex flex-column min-vh-100 {% block bodyclass %}{% endblock bodyclass %}"
         hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {% block body %}
       <div class="mb-1">
@@ -119,12 +118,22 @@
           {% endfor %}
         {% endif %}
         {% block main %}
-          {% block content %}
-            <p>Use this document as a way to quick start any new project.</p>
-          {% endblock content %}
+          <main class="flex-grow-1">
+            <div class="container py-4">
+              {% block content %}
+              {% endblock content %}
+            </div>
+        </main>
         {% endblock main %}
       </div>
     {% endblock body %}
+    {% block footer %}
+      <footer class="py-3 bg-light border-top">
+        <div class="container">
+          <span class="text-muted">© 2026 Poker Club Manager</span>
+        </div>
+      </footer>
+    {% endblock footer %}
     <!-- /container -->
     {% block modal %}
     {% endblock modal %}

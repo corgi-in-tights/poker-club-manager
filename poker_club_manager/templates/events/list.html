@@ -21,9 +21,60 @@
   {% endif %}
   <!-- ## Filter Bar ## -->
   {% url 'events:list' as update_url %}
-  {% include "common/partials/paged_filters/items_per_page.html" with update_url=update_url update_element="#event-list" default=default_filters.events_per_page current=filters.events_per_page %}
-  {% include "common/partials/paged_filters/order_by.html" with update_url=update_url update_element="#event-list" default=default_filters.order current=filters.order %}
-  {% include "common/partials/paged_filters/search.html" with update_url=update_url update_element="#event-list" default=default_filters.search_query current=filters.search_query %}
+  <label for="per-page-filter">Items Per Page</label>
+  <select name="v"
+          id="per-page-filter"
+          class="filter"
+          data-default="20"
+          hx-trigger="change"
+          hx-get="{{ update_url }}"
+          hx-target="#event-list"
+          hx-include=".filter,#current-page"
+          hx-on::after-request="updateHistory()">
+    <option value="5" {% if filters.events_per_page == 5 %}selected{% endif %}>5</option>
+    <option value="10" {% if filters.events_per_page == 10 %}selected{% endif %}>10</option>
+    <option value="20" {% if filters.events_per_page == 20 %}selected{% endif %}>20</option>
+    <option value="50" {% if filters.events_per_page == 50 %}selected{% endif %}>50</option>
+  </select>
+  <label for="order">Order By:</label>
+  <select class="filter"
+          id="order-filter"
+          name="s"
+          data-default="relevance"
+          hx-trigger="change"
+          hx-get="{{ update_url }}"
+          hx-target="#event-list"
+          hx-include=".filter,#current-page"
+          hx-on::after-request="updateHistory()">
+    <option value="relevance"
+            {% if filters.order == "relevance" %}selected{% endif %}>Relevance</option>
+    <option value="popular"
+            {% if filters.order == "popular" %}selected{% endif %}>Popular</option>
+    <option value="date" {% if filters.order == "date" %}selected{% endif %}>Date</option>
+  </select>
+  <input type="text"
+         class="filter"
+         id="search-filter"
+         name="q"
+         placeholder="Search events..."
+         value="{{ filters.search_query }}"
+         hx-trigger="input changed delay:250ms"
+         hx-get="{{ update_url }}"
+         hx-target="#event-list"
+         hx-include=".filter,#current-page"
+         hx-on::after-request="updateHistory()" />
+  <input type="checkbox"
+         class="filter"
+         id="include-finished-filter"
+         name="prev"
+         {% if filters.include_finished %}checked{% endif %}
+         data-default="0"
+         hx-trigger="change"
+         hx-get="{{ update_url }}"
+         hx-target="#event-list"
+         hx-include=".filter,#current-page"
+         hx-on::after-request="updateHistory()" />
+  <label for="include-finished-filter">Include Finished Events</label>
   <!-- ## Event List ## -->
   <div id="event-list-wrapper" hx-on::after-request="updateHistory()">
     <div id="event-list">

@@ -5,12 +5,13 @@ from django.core.paginator import Paginator
 from django.http import Http404, HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.http import require_POST
 from django.views.generic import DetailView
 
 from poker_club_manager.common.utils.params import parse_int
 from poker_club_manager.events.filters import EventListFilter
 from poker_club_manager.events.forms import EventForm, GuestCheckInForm
-from poker_club_manager.events.models import Event
+from poker_club_manager.events.models import Event, EventRSVP
 
 logger = logging.getLogger(__name__)
 
@@ -18,11 +19,11 @@ logger = logging.getLogger(__name__)
 def list_events(request):
     search_query = request.GET.get("q", "").strip()
     order = request.GET.get("s", "relevance")
-    include_finished = request.GET.get("include_finished") == "1"
+    include_finished = request.GET.get("prev", "0") in ["1", "true", "on"]
 
     events_per_page = parse_int(
         request.GET.get("v"),
-        default=10,
+        default=20,
         minv=5,
         maxv=50,
     )
@@ -44,7 +45,7 @@ def list_events(request):
         "filters": {
             "order": order,
             "events_per_page": events_per_page,
-            "include_finished": "1" if include_finished else "0",
+            "include_finished": include_finished,
             "search_query": search_query,
         },
     }
@@ -142,3 +143,25 @@ def create_event(request: HttpRequest):
         form = EventForm()
 
     return render(request, "events/create.html", {"form": form})
+
+
+@require_POST
+def rsvp(request: HttpRequest, event_id: int, rsvp_status=EventRSVP.GOING):
+    if not request.user.is_authenticated:
+        raise PermissionDenied
+
+    event = get_object_or_404(Event.objects.annotate_rsvp(request.user), pk=event_id)
+    rsvped = event.is_rsvped
+
+    if rsvped:
+        event.cancel_rsvp_user(request.user)
+        rsvped = False
+    else:
+        event.rsvp_user(request.user, rsvp_status)
+        rsvped = True
+
+    return render(
+        request,
+        "events/partials/rsvp.html",
+        {"event": event, "rsvped": rsvped},
+    )

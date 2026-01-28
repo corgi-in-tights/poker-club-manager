@@ -1,12 +1,13 @@
 from django.urls import path
 
+from poker_club_manager.events.views.event import rsvp
 from poker_club_manager.events.views.manage import (
     add_guest,
     add_participant,
     eliminate_participant,
+    flip_event_status,
     manage_search_users,
     remove_guest,
-    rsvp,
 )
 
 urlpatterns = [
@@ -14,6 +15,11 @@ urlpatterns = [
         "<int:event_id>/manage/search-users/",
         manage_search_users,
         name="manage-search-users",
+    ),
+    path(
+        "<int:event_id>/manage/flip-event-status/",
+        flip_event_status,
+        name="flip-event-status",
     ),
     path("<int:event_id>/rsvp/", rsvp, name="rsvp"),
     path(

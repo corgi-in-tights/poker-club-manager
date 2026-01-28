@@ -9,6 +9,7 @@
 {% block content %}
   <a href="{% url 'events:list' %}">Go Back</a>
   <h1>Managing Event {{ event.title }}</h1>
+  {% include "events/partials/flip_event_status.html" with event=event updated=False %}
   <div>
     <h3>Participants</h3>
     <div id="participant-list">

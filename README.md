@@ -11,17 +11,33 @@ License: GPLv3
 
 Moved to [settings](https://cookiecutter-django.readthedocs.io/en/latest/1-getting-started/settings.html).
 
-## Basic Commands
+## Contributing to the project
 
-### Setting Up Your Users
+### Installation
+1. Clone the repository
+2. Ensure [uv](https://github.com/astral-sh/uv) is installed by running `uv --version`
+3. Run `uv sync --group dev` to additionally install the dev dependencies
 
-- To create a **normal user account**, just go to Sign Up and fill out the form. Once you submit it, you'll see a "Verify Your E-mail Address" page. Go to your console to see a simulated email verification message. Copy the link into your browser. Now the user's email should be verified and ready to go.
+This site is meant to be built and mounted onto Docker containers, though you may use `uv` directly if need be
+1. Ensure [Docker][https://www.docker.com/] is installed and the daemon is running with `docker --version`
+2. You may run the compose files manually, or use [just](https://github.com/casey/just)
+3. `just build` to create the Docker image
+4. Then, `just up` into `just logs`
+5. Site should be running up at https://localhost:8000
 
-- To create a **superuser account**, use this command:
+### Running the project
+In development, the database is initialized in an empty Postgres container, to fill it:
+`just manage migrate`, then, `just manage seed`
+If running with uv directly, you will need to provide envs manually, see /.envs/local for reference.
 
-      uv run python manage.py createsuperuser
+You may also want to create a superuser using `just manage createsuperuser`, follow the prompts.
 
-For convenience, you can keep your normal user logged in on Chrome and your superuser logged in on Firefox (or similar), so that you can see how the site behaves for both kinds of users.
+I would recommend working without autosave, or the refresh can be funky (refreshes every save even if the save is invalid). Sometimes cache can be annoying for static files, work in incognito, that way you can close the window to clear the cache.
+
+#### New to Django Templates?
+Read:
+- docs/template-syntax.md
+- docs/views-template.md
 
 ### Type checks
 
@@ -40,15 +56,3 @@ To run the tests, check your test coverage, and generate an HTML coverage report
 #### Running tests with pytest
 
     uv run pytest
-
-### Live reloading and Sass CSS compilation
-
-Moved to [Live reloading and SASS compilation](https://cookiecutter-django.readthedocs.io/en/latest/2-local-development/developing-locally.html#using-webpack-or-gulp).
-
-## Deployment
-
-The following details how to deploy this application.
-
-### Docker
-
-See detailed [cookiecutter-django Docker documentation](https://cookiecutter-django.readthedocs.io/en/latest/3-deployment/deployment-with-docker.html).

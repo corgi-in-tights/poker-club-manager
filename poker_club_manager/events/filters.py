@@ -21,9 +21,9 @@ class EventListFilter:
         Entry point used by views.
         """
         qs = (
-            Event.objects.unfinished()
-            if not self.include_finished
-            else Event.objects.all()
+            Event.objects.all()
+            if self.include_finished
+            else Event.objects.unfinished()
         )
         if self.annotate_details:
             qs = qs.annotate_rsvp_count()

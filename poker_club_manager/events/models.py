@@ -16,7 +16,6 @@ from .signals import event_completed
 
 User = get_user_model()
 
-MINIMUM_EVENT_ATTENDEES_FOR_RANKING = 5
 MAXIMUM_DAYS_FOR_EVENT_RSVP = 14
 
 logger = logging.getLogger(__name__)
@@ -34,20 +33,25 @@ class EventQuerySet(models.QuerySet):
 
     def finished(self):
         today = timezone.now()
+        # Either ended_at is set or end_date is in the past
         return self.filter(
-            Q(end_date__lt=today) | Q(end_date__isnull=True, start_date__lt=today),
+            Q(ended_at__isnull=False) | Q(end_date__lt=today),
         )
 
     def unfinished(self):
         today = timezone.now()
+        # ended_at must not be set and end_date must be in the future
         return self.filter(
-            Q(end_date__gte=today) | Q(end_date__isnull=True, start_date__gte=today),
+            Q(ended_at__isnull=True, end_date__gt=today),
         )
 
     def active(self):
         today = timezone.now()
-        return self.filter(start_date__lte=today).filter(
-            Q(end_date__gte=today) | Q(end_date__isnull=True),
+        # ended_at must not be set
+        # then, either started_at is set
+        # or current date is within start_date and end_date
+        return self.filter(Q(ended_at__isnull=True)).filter(
+            Q(started_at__isnull=False) | Q(start_date__lte=today, end_date__gte=today),
         )
 
     def by_popularity(self):
@@ -111,8 +115,11 @@ class Event(AbstractTimestampedModel):
     )
 
     start_date = models.DateTimeField(_("Start Date"))
-    end_date = models.DateTimeField(_("End Date"), blank=True, null=True)
+    end_date = models.DateTimeField(_("End Date"))
     location = models.CharField(_("Location"), blank=True, max_length=255)
+
+    started_at = models.DateTimeField(_("Started At"), blank=True, null=True)
+    ended_at = models.DateTimeField(_("Ended At"), blank=True, null=True)
 
     class Meta:
         permissions = [
@@ -124,11 +131,11 @@ class Event(AbstractTimestampedModel):
 
     @property
     def is_active(self) -> bool:
-        return self.start_date <= timezone.now() <= self.end_date
+        return self.started_at or self.start_date <= timezone.now() <= self.end_date
 
     @property
     def is_finished(self) -> bool:
-        return timezone.now() > self.end_date
+        return self.ended_at or timezone.now() > self.end_date
 
     @property
     def rsvp_start_date(self) -> timezone.datetime:
@@ -138,6 +145,8 @@ class Event(AbstractTimestampedModel):
 
     @property
     def is_rsvp_open(self) -> bool:
+        if self.started_at:
+            return False
         # Can only RSVP upto N days before of the event
         now = timezone.now()
         return (
@@ -145,12 +154,15 @@ class Event(AbstractTimestampedModel):
         )
 
     def rsvp_user(self, user: User, status: str) -> EventRSVP:
+        if not self.is_rsvp_open:
+            return False
+
         rsvp, created = EventRSVP.objects.get_or_create(
             user=user,
             event=self,
             defaults={"status": status},
         )
-        if created:  # Already RSVPed
+        if not created:  # Already RSVPed
             return False
 
         rsvp.save()
@@ -256,12 +268,20 @@ class Event(AbstractTimestampedModel):
     def get_total_participants(self) -> int:
         return self.participants.count() + self.guests.count()
 
-    def complete_event(self):
-        if not self.is_finished:
-            msg = "Cannot complete an event that is not finished."
-            raise ValueError(msg)
+    def set_active(self) -> bool:
+        if self.is_active:
+            return False
+        self.started_at = timezone.now()
+        self.save()
+        return True
 
+    def set_finished(self) -> bool:
+        if not self.is_active:
+            return False
         event_completed.send(sender=self.__class__, event=self)
+        self.ended_at = timezone.now()
+        self.save()
+        return True
 
 
 class ParticipantQuerySet(models.QuerySet):

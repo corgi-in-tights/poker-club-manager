@@ -3,6 +3,14 @@ function buildParams(filters) {
 
     for (let f of filters) {
         const defaultValue = f.getAttribute("data-default") || "";
+        if (f.type === "checkbox") {
+            const val = f.checked ? "1" : "0";
+            if (val === defaultValue)
+                params.delete(f.name);
+            else params.set(f.name, val);
+            continue;
+        } 
+        
         if (f.value === defaultValue) {
             params.delete(f.name);
         } else {
@@ -17,7 +25,8 @@ function updateHistory() {
     const filters = document.getElementsByClassName("filter");
     const params = buildParams(filters);
 
-    const page = document.getElementById("current-page").getAttribute("value");
+    const pageEl = document.getElementById("current-page");
+    const page = pageEl ? pageEl.value : null;
     if (page && page !== "1") {
         params.set("p", page);
     } else {

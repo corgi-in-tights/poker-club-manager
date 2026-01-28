@@ -6,7 +6,7 @@ from django.http import HttpRequest, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods, require_POST
 
-from poker_club_manager.events.models import Event, EventRSVP
+from poker_club_manager.events.models import Event
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -27,28 +27,6 @@ def manage_event(request: HttpRequest, event_id: int):
         "rsvps": event.rsvps.unarrived().order_by("user__name"),
     }
     return render(request, "events/manage.html", context=context)
-
-
-@require_POST
-def rsvp(request: HttpRequest, event_id: int, rsvp_status=EventRSVP.GOING):
-    if not request.user.is_authenticated:
-        raise PermissionDenied
-
-    event = get_object_or_404(Event.objects.annotate_rsvp(request.user), pk=event_id)
-    rsvped = event.is_rsvped
-
-    if rsvped:
-        event.cancel_rsvp_user(request.user)
-        rsvped = False
-    else:
-        event.rsvp_user(request.user, rsvp_status)
-        rsvped = True
-
-    return render(
-        request,
-        "events/partials/rsvp.html",
-        {"event": event, "rsvped": rsvped},
-    )
 
 
 @require_POST
@@ -143,4 +121,18 @@ def manage_search_users(request: HttpRequest, event_id: int):
         request,
         "events/partials/manage_search_users.html",
         {"event": event, "results": results},
+    )
+
+@require_POST
+def flip_event_status(request: HttpRequest, event_id: int):
+    if not request.user.has_perm("events.manage_event"):
+        raise PermissionDenied
+
+    event = get_object_or_404(Event.objects.annotate_rsvp(request.user), pk=event_id)
+    updated = event.set_finished() if event.is_active else event.set_active()
+
+    return render(
+        request,
+        "events/partials/flip_event_status.html",
+        {"event": event, "updated": updated},
     )

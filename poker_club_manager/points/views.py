@@ -21,16 +21,8 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
                 "points/out_of_season.html",
             )
 
-    default_filters = SimpleNamespace(
-        {
-            "order": "points",
-            "members_per_page": 50,
-            "search_query": "",
-        },
-    )
-
     search_query = request.GET.get("q", "").strip()
-    order = request.GET.get("s", default_filters.order)
+    order = request.GET.get("s", "points")
 
     members = SeasonMemberListFilter(
         search_query=search_query,
@@ -38,9 +30,9 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
 
     members_per_page = parse_int(
         request.GET.get("v"),
-        default=default_filters.members_per_page,
-        min_value=5,
-        max_value=50,
+        default=20,
+        minv=5,
+        maxv=50,
     )
 
     paginator = Paginator(members, members_per_page)
@@ -48,34 +40,28 @@ def leaderboard(request: HttpRequest, season_id: int | None = None):
     page = parse_int(
         request.GET.get("p"),
         default=1,
-        min_value=1,
-        max_value=paginator.num_pages,
+        minv=1,
+        maxv=paginator.num_pages,
     )
     page_members = paginator.get_page(page)
 
-    context = {
-        "members": page_members,
-        "season": season,
-        "page": page,
-        "max_page": paginator.num_pages,
-    }
-
+    template = "points/leaderboard.html"
     if request.headers.get("HX-Request") == "true":
-        return render(request, "points/leaderboard.html#member_list", context=context)
+        template += "#leaderboard-table"
 
     return render(
         request,
-        "points/leaderboard.html",
+        template,
         context={
-            **context,
-            "filters": SimpleNamespace(
-                {
-                    "order": order,
-                    "members_per_page": members_per_page,
-                    "search_query": search_query,
-                },
-            ),
-            "default_filters": default_filters,
+            "members": page_members,
+            "season": season,
+            "page": page,
+            "max_page": paginator.num_pages,
+            "filters": {
+                "order": order,
+                "members_per_page": members_per_page,
+                "search_query": search_query,
+            },
             "archived": season.is_active is False,
         },
     )

@@ -1,0 +1,26 @@
+{% load static %}
+
+{% if event.is_finished %}
+  <span class="badge bg-secondary">Event Completed</span>
+{% elif event.is_active %}
+  <span class="badge bg-success">Check-Ins Open</span>
+  <button class="btn btn-danger"
+        hx-post="{% url 'events:flip-event-status' event.id %}"
+        hx-swap="outerHTML">
+  <img src="{% static 'images/loading.svg' %}"
+        alt="Loading..."
+        class="htmx-indicator spinner-border spinner-border-sm d-none"
+        role="status" />
+  Complete Event
+</button>
+{% else %}
+  <button class="btn btn-warning"
+          hx-post="{% url 'events:flip-event-status' event.id %}"
+          hx-swap="outerHTML">
+    <img src="{% static 'images/loading.svg' %}"
+          alt="Loading..."
+          class="htmx-indicator spinner-border spinner-border-sm d-none"
+          role="status" />
+    Start Check-Ins Early
+  </button>
+{% endif %}

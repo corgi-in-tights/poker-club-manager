@@ -67,7 +67,12 @@ class BlindsTimerQuerySet(models.QuerySet):
         finished_ids = []
 
         now = timezone.now()
+        age_threshold = now - timezone.timedelta(days=3)
+
         for timer in candidates:
+            if timer.created_at < age_threshold:
+                finished_ids.append(timer.id)
+                continue
             seconds_passed = max(
                 1,
                 (now - timer.current_level_started_at).total_seconds()

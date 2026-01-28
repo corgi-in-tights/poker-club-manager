@@ -13,7 +13,6 @@ class Command(BaseCommand):
 
         self.stdout.write(f"[{timezone.now()}] Starting timer cleanup...")
 
-        # Call the method we built on your Custom Manager
         count = BlindsTimer.objects.cleanup_finished()
 
         if count > 0:
