@@ -123,16 +123,36 @@ def manage_search_users(request: HttpRequest, event_id: int):
         {"event": event, "results": results},
     )
 
+
 @require_POST
-def flip_event_status(request: HttpRequest, event_id: int):
+def start_end_event(request: HttpRequest, event_id: int):
+    if not request.user.has_perm("events.manage_event"):
+        raise PermissionDenied
+
+    event = get_object_or_404(Event.objects.all(), pk=event_id)
+    # If not finished, start or end the event
+    if not event.is_finished:
+        if event.is_active:
+            event.set_finished()
+        else:
+            event.set_active()
+
+    return render(
+        request,
+        "events/partials/event_state_control.html",
+        {"event": event},
+    )
+
+
+@require_POST
+def open_close_rsvp(request: HttpRequest, event_id: int):
     if not request.user.has_perm("events.manage_event"):
         raise PermissionDenied
 
     event = get_object_or_404(Event.objects.annotate_rsvp(request.user), pk=event_id)
-    updated = event.set_finished() if event.is_active else event.set_active()
 
     return render(
         request,
-        "events/partials/flip_event_status.html",
-        {"event": event, "updated": updated},
+        "events/partials/event_state_control.html",
+        {"event": event},
     )

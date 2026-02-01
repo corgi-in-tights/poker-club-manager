@@ -5,9 +5,9 @@ from poker_club_manager.events.views.manage import (
     add_guest,
     add_participant,
     eliminate_participant,
-    flip_event_status,
     manage_search_users,
     remove_guest,
+    start_end_event,
 )
 
 urlpatterns = [
@@ -17,9 +17,9 @@ urlpatterns = [
         name="manage-search-users",
     ),
     path(
-        "<int:event_id>/manage/flip-event-status/",
-        flip_event_status,
-        name="flip-event-status",
+        "<int:event_id>/manage/start_end/",
+        start_end_event,
+        name="start_end",
     ),
     path("<int:event_id>/rsvp/", rsvp, name="rsvp"),
     path(

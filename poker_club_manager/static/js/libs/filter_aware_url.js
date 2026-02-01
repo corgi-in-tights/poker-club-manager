@@ -9,8 +9,8 @@ function buildParams(filters) {
                 params.delete(f.name);
             else params.set(f.name, val);
             continue;
-        } 
-        
+        }
+
         if (f.value === defaultValue) {
             params.delete(f.name);
         } else {

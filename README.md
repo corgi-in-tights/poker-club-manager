@@ -17,6 +17,7 @@ Moved to [settings](https://cookiecutter-django.readthedocs.io/en/latest/1-getti
 1. Clone the repository
 2. Ensure [uv](https://github.com/astral-sh/uv) is installed by running `uv --version`
 3. Run `uv sync --group dev` to additionally install the dev dependencies
+4. (Optional) add the pre-commit hook to force linting with `uv run pre-commit install`
 
 This site is meant to be built and mounted onto Docker containers, though you may use `uv` directly if need be
 1. Ensure [Docker][https://www.docker.com/] is installed and the daemon is running with `docker --version`

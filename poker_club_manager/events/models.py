@@ -116,6 +116,8 @@ class Event(AbstractTimestampedModel):
 
     start_date = models.DateTimeField(_("Start Date"))
     end_date = models.DateTimeField(_("End Date"))
+    rsvp_enabled = models.BooleanField(_("Allow RSVPs"), default=True)
+    rsvp_start_date = models.DateTimeField(_("RSVP Start Date"), null=True, blank=True)
     location = models.CharField(_("Location"), blank=True, max_length=255)
 
     started_at = models.DateTimeField(_("Started At"), blank=True, null=True)
@@ -129,6 +131,14 @@ class Event(AbstractTimestampedModel):
     def __str__(self):
         return self.title or f"Event {self.id}"
 
+    def save(self, *args, **kwargs):
+        # If RSVP is enabled and no RSVP start date is set, give it a default value
+        if self.rsvp_enabled and not self.rsvp_start_date:
+            self.rsvp_start_date = self.start_date - timezone.timedelta(
+                days=MAXIMUM_DAYS_FOR_EVENT_RSVP,
+            )
+        return super().save(*args, **kwargs)
+
     @property
     def is_active(self) -> bool:
         return self.started_at or self.start_date <= timezone.now() <= self.end_date
@@ -138,16 +148,14 @@ class Event(AbstractTimestampedModel):
         return self.ended_at or timezone.now() > self.end_date
 
     @property
-    def rsvp_start_date(self) -> timezone.datetime:
-        return self.start_date - timezone.timedelta(
-            days=MAXIMUM_DAYS_FOR_EVENT_RSVP,
-        )
-
-    @property
     def is_rsvp_open(self) -> bool:
-        if self.started_at:
+        if (
+            not self.rsvp_enabled
+            or not self.rsvp_start_date
+            or self.is_active
+            or self.is_finished
+        ):
             return False
-        # Can only RSVP upto N days before of the event
         now = timezone.now()
         return (
             not self.is_active and not self.is_finished and now >= self.rsvp_start_date

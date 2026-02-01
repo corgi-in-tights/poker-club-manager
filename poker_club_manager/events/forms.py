@@ -7,7 +7,7 @@ from .models import Event, GuestParticipant
 
 class EventForm(forms.ModelForm):
     season = forms.ModelChoiceField(
-        queryset=Season.objects.all(),
+        queryset=Season.objects.all().filter(is_active=True),
         required=False,
         widget=forms.RadioSelect(),
     )
@@ -33,6 +33,15 @@ class EventForm(forms.ModelForm):
             "end_date",
             "location",
         ]
+
+
+class EventEditForm(EventForm):
+    season = forms.ModelChoiceField(
+        queryset=Season.objects.all().filter(is_active=True),
+        required=False,
+        widget=forms.RadioSelect(),
+        disabled=True,
+    )
 
 
 class GuestCheckInForm(forms.ModelForm):

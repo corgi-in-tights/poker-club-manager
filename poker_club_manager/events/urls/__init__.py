@@ -5,6 +5,7 @@ from poker_club_manager.events.views.event import (
     check_in,
     check_into_first_active,
     create_event,
+    edit_event,
     list_events,
 )
 from poker_club_manager.events.views.manage import manage_event
@@ -20,4 +21,5 @@ urlpatterns = [
     path("<int:event_id>/", EventDetailView.as_view(), name="detail"),
     path("<int:event_id>/check-in/", check_in, name="check_in"),
     path("<int:event_id>/manage/", manage_event, name="manage"),
+    path("<int:event_id>/edit/", edit_event, name="edit"),
 ]

@@ -1,5 +1,3 @@
-from types import SimpleNamespace
-
 from django.core.paginator import Paginator
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render

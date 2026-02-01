@@ -120,6 +120,9 @@
                     {% if perms.events.manage_event %}
                       <a class="btn btn-secondary" href="{% url 'events:manage' event.id %}">🔧</a>
                     {% endif %}
+                    {% if perms.events.change_event %}
+                      <a class="btn btn-secondary" href="{% url 'events:edit' event.id %}">✏️</a>
+                    {% endif %}
                     {% if event.is_rsvp_open or event.is_active %}
                       {% with event.going_count|add:event.late_count as interested_count %}
                         {% if interested_count > 50 %}

@@ -56,9 +56,10 @@
         hx-headers='{"x-csrftoken": "{{ csrf_token }}"}'>
     {% block body %}
       <div class="mb-1">
-        <nav class="navbar navbar-expand-md navbar-light bg-light">
-          <div class="container-fluid">
-            <button class="navbar-toggler navbar-toggler-right"
+        <nav class="navbar navbar-expand-md navbar-light bg-light border-bottom">
+          <div class="container-fluid px-3">
+            <a class="navbar-brand fw-semibold" href="{% url 'home' %}">PCM</a>
+            <button class="navbar-toggler"
                     type="button"
                     data-bs-toggle="collapse"
                     data-bs-target="#navbarSupportedContent"
@@ -67,11 +68,11 @@
                     aria-label="Toggle navigation">
               <span class="navbar-toggler-icon"></span>
             </button>
-            <a class="navbar-brand" href="{% url 'home' %}">Poker Club Manager</a>
             <div class="collapse navbar-collapse" id="navbarSupportedContent">
-              <ul class="navbar-nav mr-auto">
-                <li class="nav-item active">
-                  <a class="nav-link" href="{% url 'events:list' %}">Events <span class="visually-hidden">(current)</span></a>
+              <!-- Left-aligned main nav -->
+              <ul class="navbar-nav me-auto mb-2 mb-md-0">
+                <li class="nav-item">
+                  <a class="nav-link" href="{% url 'events:list' %}">Events</a>
                 </li>
                 <li class="nav-item">
                   <a class="nav-link" href="{% url 'points:leaderboard' %}">Leaderboard</a>
@@ -79,25 +80,26 @@
                 <li class="nav-item">
                   <a class="nav-link" href="{% url 'timers:active' %}">Blinds</a>
                 </li>
+              </ul>
+              <!-- Right-aligned auth nav -->
+              <ul class="navbar-nav align-items-md-center gap-md-2">
                 {% if request.user.is_authenticated %}
                   <li class="nav-item">
                     <a class="nav-link"
                        href="{% url 'users:detail' request.user.username %}">{% translate "My Profile" %}</a>
                   </li>
                   <li class="nav-item">
-                    {# URL provided by django-allauth/account/urls.py #}
-                    <a class="nav-link" href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
+                    <a class="btn btn-outline-secondary btn-sm"
+                       href="{% url 'account_logout' %}">{% translate "Sign Out" %}</a>
                   </li>
                 {% else %}
                   {% if ACCOUNT_ALLOW_REGISTRATION %}
                     <li class="nav-item">
-                      {# URL provided by django-allauth/account/urls.py #}
-                      <a id="sign-up-link" class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
+                      <a class="nav-link" href="{% url 'account_signup' %}">{% translate "Sign Up" %}</a>
                     </li>
                   {% endif %}
                   <li class="nav-item">
-                    {# URL provided by django-allauth/account/urls.py #}
-                    <a id="log-in-link" class="nav-link" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
+                    <a class="btn btn-primary btn-sm" href="{% url 'account_login' %}">{% translate "Sign In" %}</a>
                   </li>
                 {% endif %}
               </ul>
@@ -118,12 +120,12 @@
           {% endfor %}
         {% endif %}
         {% block main %}
-          <main class="flex-grow-1">
+          <main class="min-vh-100">
             <div class="container py-4">
               {% block content %}
               {% endblock content %}
             </div>
-        </main>
+          </main>
         {% endblock main %}
       </div>
     {% endblock body %}

@@ -10,7 +10,7 @@ from django.views.generic import DetailView
 
 from poker_club_manager.common.utils.params import parse_int
 from poker_club_manager.events.filters import EventListFilter
-from poker_club_manager.events.forms import EventForm, GuestCheckInForm
+from poker_club_manager.events.forms import EventEditForm, EventForm, GuestCheckInForm
 from poker_club_manager.events.models import Event, EventRSVP
 
 logger = logging.getLogger(__name__)
@@ -164,4 +164,23 @@ def rsvp(request: HttpRequest, event_id: int, rsvp_status=EventRSVP.GOING):
         request,
         "events/partials/rsvp.html",
         {"event": event, "rsvped": rsvped},
+    )
+
+
+def edit_event(request: HttpRequest, event_id: int):
+    event = get_object_or_404(Event, id=event_id)
+    if not request.user or not request.user.has_perm("events.change_event"):
+        raise PermissionDenied
+
+    form = EventEditForm(request.POST or None, instance=event)
+
+    if request.method == "POST":
+        if form.is_valid():
+            event = form.save()
+            return redirect("events:detail", event_id=event.id)
+
+    return render(
+        request,
+        "events/edit.html",
+        {"event": event, "form": form},
     )
